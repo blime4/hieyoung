@@ -1,5 +1,6 @@
 from tkinter import *
 import os
+import cv2
 import requests
 import time
 import pandas as pd
@@ -16,6 +17,7 @@ import asyncio
 import nest_asyncio
 nest_asyncio.apply()
 import fitz
+import numpy as np
 from shutil import copyfile
 
 def showinfo(result):
@@ -890,17 +892,61 @@ def pdf_down():
 
     files = os.listdir("./png/")
     showinfo("[ run ]---开始图片切割")
+    if not os.path.exists("png_time"):
+        os.makedirs("png_time")
+    if not os.path.exists("png_get"):
+        os.makedirs("png_get")
     for j,i in enumerate(files):
-        img = Image.open("./png/"+i)
-        w,h = img.size
-        img_get = img.crop((0,int(h/2),w,h))
-        tmp = img.crop((3*w/5,0,w,h/7))
-        if not os.path.exists("png_time"):
-            os.makedirs("png_time")
-        if not os.path.exists("png_get"):
-            os.makedirs("png_get")
-        tmp.save("png_time/"+i)
-        img_get.save("png_get/"+i)
+        image = cv2.imread("./png/"+i)
+        img_time = image
+        try:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            gradX = cv2.Sobel(gray, ddepth=cv2.CV_32F, dx=1, dy=0, ksize=-1)
+            gradY = cv2.Sobel(gray, ddepth=cv2.CV_32F, dx=0, dy=1, ksize=-1)
+            gradient = cv2.subtract(gradX, gradY)
+            gradient = cv2.convertScaleAbs(gradient)
+            blurred = cv2.blur(gradient, (9, 9))
+            (_, thresh) = cv2.threshold(blurred, 90, 255, cv2.THRESH_BINARY)
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 25))
+            closed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+            closed = cv2.erode(closed, None, iterations=5)
+            closed = cv2.dilate(closed, None, iterations=50)
+            (cnts, _) = cv2.findContours(closed.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            try:
+                c = sorted(cnts, key=cv2.contourArea, reverse=True)[1]
+            except:
+                kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 25))
+                closed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+                closed = cv2.erode(closed, None, iterations=4)
+                closed = cv2.dilate(closed, None, iterations=40)
+                try:
+                    c = sorted(cnts, key=cv2.contourArea, reverse=True)[1]
+                except:
+                    h = int(image.shape[0]*0.5)
+                    image = image[h:,:]
+                    cv2.imwrite("./png_get/"+i, image)
+                    continue
+            rect = cv2.minAreaRect(c)
+            box = np.int0(cv2.boxPoints(rect))
+            # draw a bounding box arounded the detected barcode and display the image
+    #         cv2.drawContours(image, [box], -1, (0, 255, 0), 3)
+            Xs = [i[0] for i in box]
+            Ys = [i[1] for i in box]
+            x1 = min(Xs) if min(Xs)>=0 else 0
+            x2 = max(Xs)
+            y1 = min(Ys) if min(Ys)>=0 else 0
+            y2 = max(Ys)
+            hight = y2 - y1
+            width = x2 - x1
+            cropImg = image[y1:y1+hight, x1:x1+width]
+            cv2.imwrite("./png_get/"+i, cropImg)
+            h = int(img_time.shape[0]/7.0)
+            w = int(img_time.shape[1]*0.6)
+            img_time = img_time[:h,w:]
+            cv2.imwrite("./png_time/"+i,img_time)
+        except:
+            print(j,i)
+        
         if j%50 == 0:
             showinfo("完成了"+str(j)+"个")
     showinfo("[ ok ]---pdf转png成功，保存在png_get,png_time文件夹中")        

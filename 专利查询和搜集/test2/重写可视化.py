@@ -115,6 +115,7 @@ sea_word_Var.set("search_something")
 sea_word_Entry = Entry(sea_frame,textvariable=sea_word_Var)
 def sea_word_Entry_bind(event):
     sea_word_Fun(sea_word_Var.get())
+
 sea_word_Entry.bind("<Return>", sea_word_Entry_bind)
 sea_word_Entry.grid(row=0,column=0)
 def write():
@@ -324,9 +325,11 @@ def sea_word_Listbox_delete(ACTIVE):
     sea_word_Listbox.delete(0,END)
     for sea_word in sea_words:
         sea_word_Listbox.insert(END,sea_word)
-
+def sea_word_Listbox_double(event):
+    # showinfo()
+    sea_word_Fun(sea_word_Listbox.get(sea_word_Listbox.curselection()))
 sea_word_Listbox_Button = Button(sea_frame,text="删除搜索记录",command=lambda:sea_word_Listbox_delete(ACTIVE)).grid(row=2,columnspan=2)
-
+sea_word_Listbox.bind("<Double-1>",sea_word_Listbox_double)
 
 
 bad_word_Var = StringVar()
@@ -921,9 +924,9 @@ def png2excel():
                 if i >0:
                     s = str(demo.sheet_by_name(sheet_name).cell(i,ncols-2)).replace("text:","").replace("'","")
                     png = "png_get/"+s+".png"
-                    worksheet.insert_image(i,ncols,png,{'x_scale': 0.09, 'y_scale': 0.09})
+                    worksheet.insert_image(i,ncols,png,{'x_scale': 0.3, 'y_scale': 0.3})
                     tim = "png_time/"+s+".png"
-                    worksheet.insert_image(i,ncols+1,tim,{'x_scale': 0.3, 'y_scale': 0.3})
+                    worksheet.insert_image(i,ncols+1,tim,{'x_scale': 0.8, 'y_scale': 0.8})
                 i += 1
             worksheet.write(0,ncols,"专利图片")
             worksheet.write(0,ncols+1,"授权时间")
