@@ -248,10 +248,6 @@ class MyThread(threading.Thread):
         self.setDaemon(True)
         self.start()
     def run(self):
-        
-        # if self.args is None:
-        #     self.func()
-        # else:
         self.func(*self.args)
 
 select_dir_button = Button(root,text="选择文件夹",command=lambda :MyThread(select_dir,),width="20").pack()

@@ -17,6 +17,20 @@ import nest_asyncio
 nest_asyncio.apply()
 import fitz
 from shutil import copyfile
+import threading
+import webbrowser
+
+
+
+class MyThread(threading.Thread):
+    def __init__(self,func,*args):
+        super().__init__()
+        self.func = func
+        self.args = args
+        self.setDaemon(True)
+        self.start()
+    def run(self):
+        self.func(*self.args)
 
 def showinfo(result):
     realtime = time.strftime("%Y-%m-%d %H:%M:%S ")
@@ -31,9 +45,10 @@ root = Tk()
 root.geometry('900x650')
 root.title("专利查询和搜索")
 
-key_frame = Frame(width=300,height=250,bg="LightPink")
-sea_frame = Frame(width=300,height=250,bg="Yellow")
-bad_frame = Frame(width=300,height=250,bg="Thistle")
+key_frame = Frame(width=225,height=250,bg="LightPink")
+sea_frame = Frame(width=225,height=250,bg="Yellow")
+bad_frame = Frame(width=225,height=250,bg="Thistle")
+hit_frame = Frame(width=225,height=250,bg="AntiqueWhite")
 fun_frame = Frame(width=450,height=150,bg="LightSeaGreen")
 out_frame = Frame(width=450,height=150,bg="green")
 png_frame = Frame(width=450,height=250)
@@ -50,11 +65,12 @@ out_frame_Labelframe.grid()
 
 key_words = ["plant hanger","plant holder","wall plant"]
 bad_words = []
+hit_words = []
 # bad_words = ["augmented reality","reversible","system","method","tool","process","indicator","technique","saucer"]
 
-if os.path.exists("cache"):
-    if os.path.isfile("cache/bad_words.csv"):
-        bad_words = list(pd.read_csv("cache/bad_words.csv",header=None)[0])
+if os.path.exists("缓存"):
+    if os.path.isfile("缓存/排除词缓存.csv"):
+        bad_words = list(pd.read_csv("缓存/排除词缓存.csv",header=None)[0])
         showinfo("[ ok ]---导入排除词成功")
 
 sea_words = []
@@ -68,7 +84,45 @@ headers = {
 
 SURL = "http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO2&Sect2=HITOFF&p=page_change&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=0&f=S&l=50&TERM1=search_change&FIELD1=&co1=AND&TERM2=&FIELD2=&d=PTXT"
 
+hit_word_Var = StringVar()
+hit_word_Var.set("新增命中词")
+hit_word_Entry = Entry(hit_frame,textvariable=hit_word_Var)
+def hit_word_Entry_bind(event):
+    hit_word_Fun(hit_word_Var.get())
+hit_word_Entry.bind("<Return>", hit_word_Entry_bind)
+hit_word_Entry.grid(row=0,column=0)
+def hit_word_Fun(hit_word_var_):
+    global hit_words
+    if hit_word_var_ == "":
+        pass
+    elif hit_word_var_ == "新增命中词":
+        pass
+    else:
+        if hit_word_var_ in hit_words:
+            pass
+        else:
+            hit_words.append(str(hit_word_var_))
+            hit_word_Listbox.delete(0,END)
+            for hit_word in hit_words:
+                hit_word_Listbox.insert(END,hit_word)
+                
+hit_word_Button = Button(hit_frame,text="添加",command=lambda :MyThread(hit_word_Fun,hit_word_Var.get())).grid(row=0,column=1)
+hit_word_Listbox = Listbox(hit_frame,height=10,width=32)
+# hit_word_Listbox = Listbox(hit_frame,height=10,width=60,yscrollcommand=hit_word_Scrollbar.set)
+for hit_word in hit_words:
+    hit_word_Listbox.insert(END,hit_word)
+hit_word_Listbox.grid(row=1,columnspan=2)
+# hit_word_Scrollbar.config(command=hit_word_Listbox.yview)
+def hit_word_Listbox_delete(ACTIVE):
+    global hit_words
+#     showinfo(int(hit_word_Listbox.curselection()[0]))
+    hit_words = [j for i,j in enumerate(hit_words) if i != int(hit_word_Listbox.curselection()[0])]
+    hit_word_Listbox.delete(ACTIVE)
+    hit_word_Listbox.delete(0,END)
+    for hit_word in hit_words:
+        hit_word_Listbox.insert(END,hit_word)
 
+hit_word_Listbox_Button = Button(hit_frame,text="删除命中词",command=lambda:hit_word_Listbox_delete(ACTIVE)).grid(row=2,columnspan=2)
 key_word_Var = StringVar()
 key_word_Var.set("填写关键词")
 key_word_Entry = Entry(key_frame,textvariable=key_word_Var)
@@ -91,9 +145,9 @@ def key_word_Fun(key_word_var_):
             for key_word in key_words:
                 key_word_Listbox.insert(END,key_word)
                 
-key_word_Button = Button(key_frame,text="添加",command=lambda:key_word_Fun(key_word_Var.get())).grid(row=0,column=1)
-key_word_Listbox = Listbox(key_frame,selectmode=MULTIPLE,height=10,width=45)
-# key_word_Listbox = Listbox(key_frame,selectmode=MULTIPLE,height=10,width=60,yscrollcommand=key_word_Scrollbar.set)
+key_word_Button = Button(key_frame,text="添加",command=lambda :MyThread(key_word_Fun,key_word_Var.get())).grid(row=0,column=1)
+key_word_Listbox = Listbox(key_frame,height=10,width=32)
+# key_word_Listbox = Listbox(key_frame,height=10,width=60,yscrollcommand=key_word_Scrollbar.set)
 for key_word in key_words:
     key_word_Listbox.insert(END,key_word)
 key_word_Listbox.grid(row=1,columnspan=2)
@@ -219,11 +273,10 @@ tree.pack(side=LEFT, fill=Y)
 scrollbar.pack(side=RIGHT,fill=Y)
 scrollbar.config(command=tree.yview)
 def treeviewClick(event):
-    showinfo("click")
     for item in tree.selection():
         item_text = tree.item(item,"values")
         if item_text[2]!="":
-            showinfo(item_text[2])
+            # showinfo(item_text[2])
             img = Image.open(str(item_text[2]))
             img_resized = resize(w_box,h_box,img)
             tk_resized = ImageTk.PhotoImage(img_resized)
@@ -232,7 +285,13 @@ def treeviewClick(event):
             label_img.image = tk_resized
         else:
             write()
-tree.bind('<Double-1>', treeviewClick)
+def treeviewRightClick(event):
+    for item in tree.selection():
+        item_text = tree.item(item,"values")
+        # showinfo(item_text[1])
+        webbrowser.open(item_text[1])
+tree.bind('<Button-1>', treeviewClick)
+tree.bind("<Button-3>",treeviewRightClick)
 # label_img = Label(tmp)
 # label_img.pack_forget()
 tmp.grid(row=1,column=0,columnspan=4)
@@ -311,8 +370,8 @@ def sea_word_Fun(sea_word_var_):
                 sea_word_Listbox.insert(END,sea_word)
                 
 sea_word_Button = Button(sea_frame,text="添加",command=lambda:sea_word_Fun(sea_word_Var.get())).grid(row=0,column=1)
-sea_word_Listbox = Listbox(sea_frame,selectmode=MULTIPLE,height=10,width=45)
-# sea_word_Listbox = Listbox(sea_frame,selectmode=MULTIPLE,height=10,width=60,yscrollcommand=sea_word_Scrollbar.set)
+sea_word_Listbox = Listbox(sea_frame,height=10,width=32)
+# sea_word_Listbox = Listbox(sea_frame,height=10,width=60,yscrollcommand=sea_word_Scrollbar.set)
 for sea_word in sea_words:
     sea_word_Listbox.insert(END,sea_word)
 sea_word_Listbox.grid(row=1,columnspan=2)
@@ -337,7 +396,7 @@ bad_word_Var.set("填写排除词")
 bad_word_Entry = Entry(bad_frame,textvariable=bad_word_Var)
 def bad_word_Entry_bind(event):
     bad_word_Fun(key_word_Var.get())
-bad_word_Entry.bind("<Return>", key_word_Entry_bind)
+bad_word_Entry.bind("<Return>", bad_word_Entry_bind)
 bad_word_Entry.grid(row=0,column=0)
 def bad_word_Fun(bad_word_var_):
     global bad_words
@@ -355,7 +414,7 @@ def bad_word_Fun(bad_word_var_):
                 bad_word_Listbox.insert(END,bad_word)
                 
 bad_word_Button = Button(bad_frame,text="添加",command=lambda:bad_word_Fun(bad_word_Var.get())).grid(row=0,column=1)
-bad_word_Listbox = Listbox(bad_frame,selectmode=MULTIPLE,height=10,width=45)
+bad_word_Listbox = Listbox(bad_frame,height=10,width=32)
 for bad_word in bad_words:
     bad_word_Listbox.insert(END,bad_word)
 bad_word_Listbox.grid(row=1,column=0,columnspan=2)
@@ -369,13 +428,13 @@ def bad_word_Listbox_delete(ACTIVE):
     for bad_word in bad_words:
         bad_word_Listbox.insert(END,bad_word)
 def bad_word_save():
-    if not os.path.exists("cache"):
-        os.mkdir("cache")
-    pd.DataFrame(bad_words).to_csv("cache/bad_words.csv",header=FALSE,index=None)
+    if not os.path.exists("缓存"):
+        os.mkdir("缓存")
+    pd.DataFrame(bad_words).to_csv("缓存/排除词缓存.csv",header=FALSE,index=None)
     showinfo("[ ok ]---已保存到cache文件夹中")
 
-bad_word_Listbox_Button = Button(bad_frame,text="删除排除词",command=lambda:bad_word_Listbox_delete(ACTIVE)).grid(row=2,column=0,sticky=E+W)
-bad_word_save_Button = Button(bad_frame,text="保存",command=bad_word_save).grid(row=2,column=1,sticky=E+W)
+bad_word_Listbox_Button = Button(bad_frame,text="删除排除词",command=lambda:bad_word_Listbox_delete(ACTIVE)).grid(row=2,column=0)
+bad_word_save_Button = Button(bad_frame,text="保存",command=bad_word_save).grid(row=2,column=1)
 
 #开始爬取数据
 def spider():
@@ -383,8 +442,8 @@ def spider():
     showinfo("[ tip ]---这一步需要的时间，和爬取的时间间隔和爬取的内容数量有关，请耐心等待。")
     global key_words
     key_urls = {}
-    if not os.path.exists("raw_data"):
-            os.mkdir("raw_data")
+    if not os.path.exists("原始数据"):
+            os.mkdir("原始数据")
     for key_word in key_words:
         key_words_url = SURL
         key_words_url = key_words_url.replace("search_change",str(key_word))
@@ -436,7 +495,7 @@ def spider():
                     page_href.append(href)
         page_dict = {"标题":page_a,"专利链接":page_href,"图片链接":page_img}
         page_df = pd.DataFrame(page_dict)
-        page_df.to_csv("./raw_data/"+key+".csv",index=None,header=False)
+        page_df.to_csv("./原始数据/"+key+".csv",index=None,header=False)
         showinfo("导出"+key+"第一页")
     async def get_page_s(session,key,url):
         async with session.get(url, timeout=60) as resp:
@@ -466,7 +525,7 @@ def spider():
                     page_href.append(href)
         page_dict = {"标题":page_a,"专利链接":page_href,"图片链接":page_img}
         page_df = pd.DataFrame(page_dict)
-        page_df.to_csv("./raw_data/"+key+".csv",index=None,mode='a',header=False)
+        page_df.to_csv("./原始数据/"+key+".csv",index=None,mode='a',header=False)
         showinfo(key+" +1")
     async def download(key):
         async with aiohttp.ClientSession() as session:
@@ -492,7 +551,7 @@ def spider():
     showinfo("#"*40)
     end = time.time()
     showinfo('总共耗时{}秒'.format(end-start))
-    showinfo("[ ok ]---全部导出完毕，保存在raw_data文件夹中")
+    showinfo("[ ok ]---全部导出完毕，保存在“原始数据”文件夹中")
 
 # 清洗源数据
 def clean():
@@ -530,7 +589,7 @@ def clean():
         
         return df
     
-    path = "./raw_data/"
+    path = "./原始数据/"
     if not os.path.exists(path):
         showinfo("[ error ]---源数据未获取")
     else:
@@ -538,29 +597,36 @@ def clean():
         if len(files) == 0:
             showinfo("[ error ]---源数据为空" )
         else:
-            if not os.path.exists("cleaned"):
-                os.mkdir("cleaned")
-            writer = pd.ExcelWriter("./cleaned/cleaned_data.xlsx")    
+            if not os.path.exists("已处理"):
+                os.mkdir("已处理")
+            writer = pd.ExcelWriter("./已处理/初步数据整理.xlsx")    
             for file in files:
                 df = pd.read_csv(path+files[0],header=None,names=["标题","pdf下载链接","图片链接"])
                 key = file.split(".")[0]
                 df = data_deal(df)
                 df.drop_duplicates(subset=["专利号"],keep="first",inplace=True)
                 df.to_excel(writer,sheet_name=key,index=None)
-            showinfo("[ ok ]---数据清洗完成，已保存到cleaned文件夹中")
+            showinfo("[ ok ]---数据清洗完成，已保存到“/已处理”文件夹中")
             writer.close()
+
+
+def fast_clean_deep():
+    showinfo("[ run ]---开始自动快速整理")
+    df_hit = pd.read_excel("./已处理/命中数据.xlsx")
+    df_rest = pd.read_excel("./已处理/未命中数据.xlsx")
+
     
 #深度清洗源数据
 def clean_deep():
     showinfo("[ run ]---正在进行深度清洗源数据")
-    if not os.path.exists("cleaned"):
+    if not os.path.exists("已处理"):
         showinfo("[ warning ]---数据未清洗，尝试自动清洗")
         clean()
-    if not os.path.exists("cleaned") or len(os.listdir("cleaned"))==0:
+    if not os.path.exists("已处理") or len(os.listdir("已处理"))==0:
         showinfo("[ error ]---自动清洗失败")
     else:
         try:
-            df = pd.read_excel("./cleaned/cleaned_data.xlsx",None)
+            df = pd.read_excel("./已处理/初步数据整理.xlsx",None)
             keys = list(df.keys())
             df_all = pd.DataFrame()
             for i in keys:
@@ -569,6 +635,7 @@ def clean_deep():
             df_all.drop_duplicates(subset=["专利号"],keep="first",inplace=True)
             global key_words,bad_words
             Hit = [i.lower() for i in key_words]
+            hit_apps = [i.lower() for i in hit_words]
             df_rest = df_all
     #         def get_hit(Hit):
             df_hit = pd.DataFrame()
@@ -582,26 +649,35 @@ def clean_deep():
     #         def deal_hit(df_hit):
             for i in bad_words:
                 i = i.lower()
+                df_rest = pd.concat([df_rest,df_hit[~df_hit["标题"].str.contains(i)]])
                 df_hit = df_hit[~df_hit["标题"].str.contains(i)]
+            for i in hit_apps:
+                df_hit = pd.concat([df_hit,df_rest[df_rest["标题"].str.contains(i)]])
+                df_rest = df_rest[~df_rest["标题"].str.contains(i)]
     #             return df_hit
     #         df_hit = deal_hit(df_hit)
             df_hit.drop_duplicates(subset=["专利号"],keep="first",inplace=True)
+            df_rest.drop_duplicates(subset=["专利号"],keep="first",inplace=True)
     #         df_hit["标题长度"] = df_hit.apply(lambda row:len(row["标题"]),axis=1)
     #         df_hit.sort_values(by="标题长度",inplace=True)
             df_hit = df_hit[["专利号","pdf下载链接"]]
-            df_hit.to_excel("./cleaned/demo.xlsx",index=None)
-            df_all.to_excel("./cleaned/df_all.xlsx",index=None)
-            df_rest.to_excel("./cleaned/df_rest.xlsx",index=None)
-            showinfo("[ ok ]---深度数据清洗完成，已保存到cleaned文件夹demo.xlsx中")
+            df_hit.to_excel("./已处理/命中数据.xlsx",index=None)
+            df_all.to_excel("./已处理/全部数据.xlsx",index=None)
+            df_rest.to_excel("./已处理/未命中数据.xlsx",index=None)
+            showinfo("[ ok ]---深度数据整理完成，已保存到“/已处理”文件夹“命中数据.xlsx”中")
+            global check_1,check_2
+            check_1 = False
+            check_2 = False
+            _check()
         except:
             showinfo("[ error ]---出现异常")
-#pdf下载
+#pdf下载和整理
 def down_search(df):
     pdf_dir = "tmp/pdf/"
     png_dir = "tmp/png/"
     png_time = "tmp/png_time/"
     png_get = "tmp/png_get/"
-    thread_num = 50
+    thread_num = 50 if len(df) >=50 else len(df)
     timeout = 30
     len_to_download = 0
     failurls = []
@@ -753,7 +829,8 @@ def pdf_down():
     showinfo("[ tip ]---这一步需要很长时间，请耐心等待。")
     img_dir = "pdf/"
     tmp_dir = "tmp/pdf"
-    thread_num = 50
+    thread_num = 50 
+
     timeout = 30
     len_to_download = 0
     if not os.path.exists(img_dir):
@@ -804,7 +881,7 @@ def pdf_down():
                 showinfo("exceptfail\t%s"%img_url)
     def get_img_url_generate():
         imgs = []
-        df = pd.read_excel("./cleaned/demo.xlsx")
+        df = pd.read_excel("./已处理/命中数据.xlsx")
         global len_to_download
         len_to_download = len(df)
         df = df[["pdf下载链接","专利号"]]
@@ -911,9 +988,9 @@ def pdf_down():
 def png2excel():
     showinfo("[ run ]---正在进行将图片插入到excel中")
     try:
-        demo = xlrd.open_workbook("./cleaned/demo.xlsx",on_demand=True)
+        demo = xlrd.open_workbook("./已处理/命中数据.xlsx",on_demand=True)
         sheet_names = demo.sheet_names()
-        final = xlsxwriter.Workbook("./cleaned/img.xlsx")
+        final = xlsxwriter.Workbook("./已处理/最终结果.xlsx")
         for sheet_name in sheet_names:
             worksheet = final.add_worksheet(sheet_name)
             nrows = demo.sheet_by_name(sheet_name).nrows
@@ -963,8 +1040,8 @@ fun_frame_Label = Label(fun_frame_Labelframe,text="爬取时间间隔设置: 秒
 fun_frame_Spinbox = Spinbox(fun_frame_Labelframe,from_=1,to=100,increment=1,textvariable=time_scale_var,command=get_time_scale_var).grid(row=0,column=1,sticky=E+W)
 fun_frame_Button_spider = Button(fun_frame_Labelframe,text="开始爬取数据",command=spider).grid(row=0,column=2,sticky=E+W)        
 fun_frame_Button_clean = Button(fun_frame_Labelframe,text="初步数据整理",command=clean).grid(row=1,column=0,sticky=E+W)
-fun_frame_Button_clean_deep = Button(fun_frame_Labelframe,text="深度清洗源数据",command=clean_deep).grid(row=1,column=1,sticky=E+W)
-fun_frame_Button_pdf_download = Button(fun_frame_Labelframe,text="pdf下载",command=pdf_down).grid(row=1,column=2,sticky=E+W)
+fun_frame_Button_clean_deep = Button(fun_frame_Labelframe,text="深度数据整理",command=clean_deep).grid(row=1,column=1,sticky=E+W)
+fun_frame_Button_pdf_download = Button(fun_frame_Labelframe,text="pdf下载和整理",command=pdf_down).grid(row=1,column=2,sticky=E+W)
 fun_frame_Button_png2excel = Button(fun_frame_Labelframe,text="插入图片到excel",command=png2excel).grid(row=2,column=0,sticky=E+W)
 pil_image = Image.new('RGB', (500, 500), (255,255,255))
 tk_image = ImageTk.PhotoImage(pil_image)
@@ -980,14 +1057,14 @@ def _check():
     global check_1,check_2
     global df_rest,df_all,df_hit
     if check_2 == False:
-        if os.path.exists("cleaned"):
-            if os.path.isfile("cleaned/df_all.xlsx") and os.path.isfile("cleaned/df_rest.xlsx") and os.path.isfile("cleaned/demo.xlsx"):
+        if os.path.exists("已处理"):
+            if os.path.isfile("已处理/全部数据.xlsx") and os.path.isfile("已处理/未命中数据.xlsx") and os.path.isfile("已处理/命中数据.xlsx"):
                 check_1 = True
                 showinfo("[ tip ] check_1 = True")
         if check_1:
-            df_all = pd.read_excel("cleaned/df_all.xlsx")
-            df_rest = pd.read_excel("cleaned/df_rest.xlsx")
-            df_hit = pd.read_excel("cleaned/demo.xlsx")
+            df_all = pd.read_excel("已处理/全部数据.xlsx")
+            df_rest = pd.read_excel("已处理/未命中数据.xlsx")
+            df_hit = pd.read_excel("已处理/命中数据.xlsx")
             df_hit = pd.merge(df_hit,df_all)
             df_all = df_all.reindex(df_all['标题'].str.len().sort_values(ascending=True).index)
             df_rest = df_rest.reindex(df_rest['标题'].str.len().sort_values(ascending=True).index)
@@ -1022,8 +1099,9 @@ label_img.pack(fill="both", expand=True)
 
 
 key_frame.place(x=0,y=0)
-sea_frame.place(x=300,y=0)
-bad_frame.place(x=600,y=0)
+sea_frame.place(x=225,y=0)
+bad_frame.place(x=450,y=0)
+hit_frame.place(x=675,y=0)
 fun_frame.place(x=0,y=250)
 sho_frame.place(x=0,y=400)
 out_frame.place(x=450,y=250)
