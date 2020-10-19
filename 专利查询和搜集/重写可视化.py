@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import messagebox
 import os
 import requests
 import time
@@ -21,7 +22,6 @@ import threading
 import webbrowser
 
 
-
 class MyThread(threading.Thread):
     def __init__(self,func,*args):
         super().__init__()
@@ -42,10 +42,10 @@ def showinfo(result):
 
 
 root = Tk()
-root.geometry('900x650')
+root.geometry('1100x650')
 root.title("专利查询和搜索")
 
-key_frame = Frame(width=225,height=250,bg="LightPink")
+key_frame = Frame(width=425,height=250,bg="LightPink")
 sea_frame = Frame(width=225,height=250,bg="Yellow")
 bad_frame = Frame(width=225,height=250,bg="Thistle")
 hit_frame = Frame(width=225,height=250,bg="AntiqueWhite")
@@ -63,9 +63,11 @@ out_frame_Text.grid()
 out_frame_Labelframe.grid()
 
 
-key_words = ["plant hanger","plant holder","wall plant"]
+key_words = []
 bad_words = []
 hit_words = []
+sea_words = []
+done_words = []
 # bad_words = ["augmented reality","reversible","system","method","tool","process","indicator","technique","saucer"]
 
 if os.path.exists("缓存"):
@@ -75,8 +77,16 @@ if os.path.exists("缓存"):
     if os.path.exists("缓存/新增命中词缓存.csv"):
         hit_words = list(pd.read_csv("缓存/新增命中词缓存.csv",header=None)[0])
         showinfo("[ ok ]---导入新增命中词成功")
+    if os.path.exists("缓存/搜索记录缓存.csv"):
+        sea_words = list(pd.read_csv("缓存/搜索记录缓存.csv",header=None)[0])
+        showinfo("[ ok ]---导入搜索记录成功")
+    if os.path.exists("缓存/关键词缓存.csv"):
+        key_words = list(pd.read_csv("缓存/关键词缓存.csv",header=None)[0])
+        showinfo("[ ok ]---导入关键词成功")
+    if os.path.exists("缓存/done.csv"):
+        done_words = list(pd.read_csv("缓存/done.csv",header=None)[0])
+        showinfo("[ ok ]---导入done成功")
 
-sea_words = []
 time_sacle = "5"
 failurls = []
 w_box = 400   
@@ -86,7 +96,7 @@ headers = {
 }
 
 SURL = "http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO2&Sect2=HITOFF&p=page_change&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=0&f=S&l=50&TERM1=search_change&FIELD1=&co1=AND&TERM2=&FIELD2=&d=PTXT"
-
+SURL_2 = "http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO2&Sect2=HITOFF&p=page_change&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=0&f=S&l=50&TERM1=search_change&FIELD1=&co1=AND&TERM2=term2_change&FIELD2=&d=PTXT"
 hit_word_Var = StringVar()
 hit_word_Var.set("新增命中词")
 hit_word_Entry = Entry(hit_frame,textvariable=hit_word_Var)
@@ -148,29 +158,51 @@ def hit_word_Listbox_delete(ACTIVE):
 
 hit_word_Listbox_Button = Button(hit_frame,text="删除命中词",command=lambda:hit_word_Listbox_delete(ACTIVE)).grid(row=2,columnspan=2)
 key_word_Var = StringVar()
+key_word_term2_Var = StringVar()
 key_word_Var.set("填写关键词")
+key_word_term2_Var.set("TERM2")
 key_word_Entry = Entry(key_frame,textvariable=key_word_Var)
+key_word_term2 = Entry(key_frame,textvariable=key_word_term2_Var)
 def key_word_Entry_bind(event):
-    key_word_Fun(key_word_Var.get())
+    key_word_Fun(key_word_Var.get(),"TERM2")
 key_word_Entry.bind("<Return>", key_word_Entry_bind)
 key_word_Entry.grid(row=0,column=0)
-def key_word_Fun(key_word_var_):
+key_word_term2.grid(row=0,column=1)
+def key_word_Fun(key_word_var_,key_word_term2_var_):
     global key_words
     if key_word_var_ == "":
         pass
     elif key_word_var_ == "填写关键词":
         pass
     else:
-        if key_word_var_ in key_words:
-            pass
+        if key_word_term2_var_ == "TERM2" or key_word_term2_var_ == "":
+            key_word_var_ = key_word_var_.lower()
+            if key_word_var_ in key_words:
+                pass
+            else:
+                key_words.append(str(key_word_var_))
+                key_word_Listbox.delete(0,END)
+                for key_word in key_words:
+                    key_word_Listbox.insert(END,key_word)
         else:
-            key_words.append(str(key_word_var_))
-            key_word_Listbox.delete(0,END)
-            for key_word in key_words:
-                key_word_Listbox.insert(END,key_word)
+            key_two_ = key_word_var_.lower() +"&"+key_word_term2_var_.lower()
+            if key_two_ in key_words:
+                pass
+            else:
+                key_words.append(str(key_two_))
+                key_word_Listbox.delete(0,END)
+                for key_word in key_words:
+                    key_word_Listbox.insert(END,key_word)
                 
-key_word_Button = Button(key_frame,text="添加",command=lambda :key_word_Fun(key_word_Var.get())).grid(row=0,column=1)
-key_word_Listbox = Listbox(key_frame,height=10,width=32)
+key_word_Button = Button(key_frame,text="添加",command=lambda :key_word_Fun(key_word_Var.get(),key_word_term2_Var.get())).grid(row=0,column=2)
+def key_word_save():
+    if not os.path.exists("缓存"):
+        os.mkdir("缓存")
+    pd.DataFrame(key_words).to_csv("缓存/关键词缓存.csv",header=FALSE,index=None)
+    showinfo("[ ok ]---已保存到cache文件夹中")
+
+key_word_save_Button = Button(key_frame,text="保存",command=key_word_save).grid(row=2,column=1)
+key_word_Listbox = Listbox(key_frame,height=10,width=60)
 # key_word_Listbox = Listbox(key_frame,height=10,width=60,yscrollcommand=key_word_Scrollbar.set)
 for key_word in key_words:
     key_word_Listbox.insert(END,key_word)
@@ -396,6 +428,13 @@ def sea_word_Fun(sea_word_var_):
                 sea_word_Listbox.insert(END,sea_word)
                 
 sea_word_Button = Button(sea_frame,text="添加",command=lambda:sea_word_Fun(sea_word_Var.get())).grid(row=0,column=1)
+def sea_word_save():
+    if not os.path.exists("缓存"):
+        os.mkdir("缓存")
+    pd.DataFrame(sea_words).to_csv("缓存/搜索记录缓存.csv",header=FALSE,index=None)
+    showinfo("[ ok ]---已保存到cache文件夹中")
+
+sea_word_save_Button = Button(sea_frame,text="保存",command=sea_word_save).grid(row=2,column=1)
 sea_word_Listbox = Listbox(sea_frame,height=10,width=32)
 # sea_word_Listbox = Listbox(sea_frame,height=10,width=60,yscrollcommand=sea_word_Scrollbar.set)
 for sea_word in sea_words:
@@ -473,124 +512,147 @@ def MyThread_spider():
     MyThread(spider)
 #开始爬取数据
 def spider():
-    showinfo("[ run ]---开始爬取数据")
-    showinfo("[ tip ]---这一步需要的时间，和爬取的时间间隔和爬取的内容数量有关，请耐心等待。")
-    global key_words
-    key_urls = {}
-    if not os.path.exists("原始数据"):
+    global key_words,done_words
+    if len(key_words)==0:
+        messagebox.showinfo("提示","关键词为空")
+    else:
+        showinfo("[ run ]---开始爬取数据")
+        showinfo("[ tip ]---这一步需要的时间，和爬取的时间间隔和爬取的内容数量有关，请耐心等待。")
+        for_key_words = [key for key in key_words if key not in done_words]
+        key_urls = {}
+        if not os.path.exists("原始数据"):
             os.mkdir("原始数据")
-    for key_word in key_words:
-        key_words_url = SURL
-        key_words_url = key_words_url.replace("search_change",str(key_word))
-        url_1 = key_words_url
-        url_1 = url_1.replace("page_change","1")
-        key_urls[key_word]=url_1
-    url_lst_failed = []
-    url_lst_successed = []
-    pages_key_urls = {}
-    global time_sacle
-    async def get_page(session,key):
-        async with session.get(key_urls[key], timeout=300) as resp:
-            if resp.status != 200:
-                url_lst_failed.append(key_urls[key])
+        if len(key_words)==0:
+            messagebox.showinfo("提示","关键词为空")
+        for key_word in for_key_words:
+            if "&" in key_word:
+                term_1 = key_word.split("&")[0]
+                term_2 = key_word.split("&")[1]
+                key_words_url = SURL_2
+                key_words_url = key_words_url.replace("search_change",str(term_1))
+                key_words_url = key_words_url.replace("term2_change",str(term_2))
+                url_1 = key_words_url
+                url_1 = url_1.replace("page_change","1")
+                key_urls[key_word]=url_1
             else:
-                url_lst_successed.append(key_urls[key])
-            return await resp.text(),key
-    async def parser(html,key):
-        page_a = []
-        page_img = []
-        page_href = []
-        soup = BeautifulSoup(html, 'html.parser')
-        total_len = soup.find("body").find_all("i")[1].find_all("strong")[2].get_text()
-        page_num = int(float(total_len)/50.5)+2
-        showinfo(key+"一共"+str(total_len)+"个论文，共"+str(page_num-1)+"页")
-        if page_num >= 2:
-            for i in range(2,page_num):
                 key_words_url = SURL
-                key_words_url = key_words_url.replace("search_change",str(key))
-                url_i = key_words_url
-                url_i = url_i.replace("page_change",str(i))
-                if key not in pages_key_urls:
-                    pages_key_urls[key] = [url_i]
+                key_words_url = key_words_url.replace("search_change",str(key_word))
+                url_1 = key_words_url
+                url_1 = url_1.replace("page_change","1")
+                key_urls[key_word]=url_1
+        url_lst_failed = []
+        url_lst_successed = []
+        pages_key_urls = {}
+        global time_sacle
+        async def get_page(session,key):
+            async with session.get(key_urls[key], timeout=300) as resp:
+                if resp.status != 200:
+                    url_lst_failed.append(key_urls[key])
                 else:
-                    pages_key_urls[key].append(url_i)
-        soup_tb = soup.find_all("table")
-        for tb in soup_tb:
-            for tr in tb.find_all("tr"):
-                valign_top = list(tr.find_all("td",attrs={"valign":"top"}))
-                if len(valign_top)>=2:
-                    num = valign_top[1].get_text().replace(",","")
-                    img = "https://pdfpiw.uspto.gov/.piw?Docid="+str(num)
-                    top = valign_top[2]
-                    href = "http://patft.uspto.gov/"+str(top.a.get("href"))
-                    a = top.get_text()
-                    a = a.replace("\n"," ")
-                    page_a.append(a)
-                    page_img.append(img)
-                    page_href.append(href)
-        page_dict = {"标题":page_a,"专利链接":page_href,"图片链接":page_img}
-        page_df = pd.DataFrame(page_dict)
-        page_df.to_csv("./原始数据/"+key+".csv",index=None,header=False)
-        showinfo("导出"+key+"第一页")
-    async def get_page_s(session,key,url):
-        async with session.get(url, timeout=60) as resp:
-            if resp.status != 200:
-                url_lst_failed.append(url)
+                    url_lst_successed.append(key_urls[key])
+                return await resp.text(),key
+        async def parser(html,key):
+            page_a = []
+            page_img = []
+            page_href = []
+            soup = BeautifulSoup(html, 'html.parser')
+            try:
+                total_len = soup.find("body").find_all("i")[1].find_all("strong")[2].get_text()
+            except:
+                total_len = 0
+            if total_len == 0:
+                showinfo(key+"---没有找到匹配专利")
             else:
-                url_lst_successed.append(url)
-            return await resp.text(),key
-    async def parser_s(html,key):
-        page_a = []
-        page_img = []
-        page_href = []
-        soup = BeautifulSoup(html, 'html.parser')
-        soup_tb = soup.find_all("table")
-        for tb in soup_tb:
-            for tr in tb.find_all("tr"):
-                valign_top = list(tr.find_all("td",attrs={"valign":"top"}))
-                if len(valign_top)>=2:
-                    num = valign_top[1].get_text().replace(",","")
-                    img = "https://pdfpiw.uspto.gov/.piw?Docid="+str(num)
-                    top = valign_top[2]
-                    href = "http://patft.uspto.gov/"+str(top.a.get("href"))
-                    a = top.get_text()
-                    a = a.replace("\n"," ")
-                    page_a.append(a)
-                    page_img.append(img)
-                    page_href.append(href)
-        page_dict = {"标题":page_a,"专利链接":page_href,"图片链接":page_img}
-        page_df = pd.DataFrame(page_dict)
-        page_df.to_csv("./原始数据/"+key+".csv",index=None,mode='a',header=False)
-        showinfo(key+" +1")
-    async def download(key):
-        async with aiohttp.ClientSession() as session:
-            html,key = await get_page(session,key)
-            await parser(html,key)
-            await asyncio.sleep(int(time_sacle))
-    async def download_s(key,url):
-        async with aiohttp.ClientSession() as session:
-            html,key = await get_page_s(session,key,url)
-            await parser_s(html,key)
-            await asyncio.sleep(int(time_sacle))
-    start = time.time()
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    tasks = [asyncio.ensure_future(download(key)) for key in key_urls]
-    loop.run_until_complete(asyncio.wait(tasks))
+                page_num = int(float(total_len)/50.5)+2
+                showinfo(key+"一共"+str(total_len)+"个专利，共"+str(page_num-1)+"页")
+                if page_num >= 2:
+                    for i in range(2,page_num):
+                        key_words_url = SURL
+                        key_words_url = key_words_url.replace("search_change",str(key))
+                        url_i = key_words_url
+                        url_i = url_i.replace("page_change",str(i))
+                        if key not in pages_key_urls:
+                            pages_key_urls[key] = [url_i]
+                        else:
+                            pages_key_urls[key].append(url_i)
+                soup_tb = soup.find_all("table")
+                for tb in soup_tb:
+                    for tr in tb.find_all("tr"):
+                        valign_top = list(tr.find_all("td",attrs={"valign":"top"}))
+                        if len(valign_top)>=2:
+                            num = valign_top[1].get_text().replace(",","")
+                            img = "https://pdfpiw.uspto.gov/.piw?Docid="+str(num)
+                            top = valign_top[2]
+                            href = "http://patft.uspto.gov/"+str(top.a.get("href"))
+                            a = top.get_text()
+                            a = a.replace("\n"," ")
+                            page_a.append(a)
+                            page_img.append(img)
+                            page_href.append(href)
+                page_dict = {"标题":page_a,"专利链接":page_href,"图片链接":page_img}
+                page_df = pd.DataFrame(page_dict)
+                page_df.to_csv("./原始数据/"+key+".csv",index=None,header=False)
+                showinfo("导出"+key+"第一页")
+        async def get_page_s(session,key,url):
+            async with session.get(url, timeout=60) as resp:
+                if resp.status != 200:
+                    url_lst_failed.append(url)
+                else:
+                    url_lst_successed.append(url)
+                return await resp.text(),key
+        async def parser_s(html,key):
+            page_a = []
+            page_img = []
+            page_href = []
+            soup = BeautifulSoup(html, 'html.parser')
+            soup_tb = soup.find_all("table")
+            for tb in soup_tb:
+                for tr in tb.find_all("tr"):
+                    valign_top = list(tr.find_all("td",attrs={"valign":"top"}))
+                    if len(valign_top)>=2:
+                        num = valign_top[1].get_text().replace(",","")
+                        img = "https://pdfpiw.uspto.gov/.piw?Docid="+str(num)
+                        top = valign_top[2]
+                        href = "http://patft.uspto.gov/"+str(top.a.get("href"))
+                        a = top.get_text()
+                        a = a.replace("\n"," ")
+                        page_a.append(a)
+                        page_img.append(img)
+                        page_href.append(href)
+            page_dict = {"标题":page_a,"专利链接":page_href,"图片链接":page_img}
+            page_df = pd.DataFrame(page_dict)
+            page_df.to_csv("./原始数据/"+key+".csv",index=None,mode='a',header=False)
+            showinfo(key+" +1")
+        async def download(key):
+            async with aiohttp.ClientSession() as session:
+                html,key = await get_page(session,key)
+                await parser(html,key)
+                await asyncio.sleep(int(time_sacle))
+        async def download_s(key,url):
+            async with aiohttp.ClientSession() as session:
+                html,key = await get_page_s(session,key,url)
+                await parser_s(html,key)
+                done_words.append(key)
+                await asyncio.sleep(int(time_sacle))
+        start = time.time()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        tasks = [asyncio.ensure_future(download(key)) for key in key_urls]
+        loop.run_until_complete(asyncio.wait(tasks))
 
-    tasks_s = []
-    loop_s = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop_s)
-    for key in pages_key_urls:
-        for url in pages_key_urls[key]:
-            tasks_s.append(asyncio.ensure_future(download_s(key,url)))
-    loop_s.run_until_complete(asyncio.wait(tasks_s))
-    showinfo("#"*40)
-    end = time.time()
-    showinfo('总共耗时{}秒'.format(end-start))
-    showinfo("[ ok ]---全部导出完毕，保存在“原始数据”文件夹中")
-    clean()
-    clean_deep()
+        tasks_s = []
+        loop_s = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop_s)
+        for key in pages_key_urls:
+            for url in pages_key_urls[key]:
+                tasks_s.append(asyncio.ensure_future(download_s(key,url)))
+        loop_s.run_until_complete(asyncio.wait(tasks_s))
+        showinfo("#"*40)
+        end = time.time()
+        showinfo('总共耗时{}秒'.format(end-start))
+        showinfo("[ ok ]---全部导出完毕，保存在“原始数据”文件夹中")
+        clean()
+        clean_deep()
 
 # 清洗源数据
 def clean():
@@ -640,7 +702,7 @@ def clean():
                 os.mkdir("已处理")
             writer = pd.ExcelWriter("./已处理/初步数据整理.xlsx")    
             for file in files:
-                df = pd.read_csv(path+files[0],header=None,names=["标题","pdf下载链接","图片链接"])
+                df = pd.read_csv(path+file,header=None,names=["标题","pdf下载链接","图片链接"])
                 key = file.split(".")[0]
                 df = data_deal(df)
                 df.drop_duplicates(subset=["专利号"],keep="first",inplace=True)
@@ -665,59 +727,81 @@ def fast_clean_deep(hit_app):
     
 #深度清洗源数据
 def clean_deep():
-    showinfo("[ run ]---正在进行深度清洗源数据")
-    if not os.path.exists("已处理"):
-        showinfo("[ warning ]---数据未清洗，尝试自动清洗")
-        clean()
-    if not os.path.exists("已处理") or len(os.listdir("已处理"))==0:
-        showinfo("[ error ]---自动清洗失败")
-    else:
-        try:
+    global df_rest,df_all,df_hit
+    global check_1,check_2
+    if len(df_rest) == 0 and len(df_all) == 0 and len(df_hit) == 0:
+        showinfo("[ run ]---正在进行深度清洗源数据")
+        if not os.path.exists("已处理"):
+            showinfo("[ warning ]---数据未清洗，尝试自动清洗")
+            clean()
+        if not os.path.exists("已处理") or len(os.listdir("已处理"))==0:
+            showinfo("[ error ]---自动清洗失败")
+        else:
             df = pd.read_excel("./已处理/初步数据整理.xlsx",None)
             keys = list(df.keys())
             df_all = pd.DataFrame()
             for i in keys:
                 df_i = df[i]
-                df_all = pd.concat([df_i,df_all])
+                df_all = pd.concat([df_all,df_i])
             df_all.drop_duplicates(subset=["专利号"],keep="first",inplace=True)
-            global key_words,bad_words
+            # global key_words,bad_words,hit_words
             Hit = [i.lower() for i in key_words]
             hit_apps = [i.lower() for i in hit_words]
             df_rest = df_all
-    #         def get_hit(Hit):
             df_hit = pd.DataFrame()
-    #             global df_rest
             for i in Hit:
                 df_hit_i = df_rest[df_rest["标题"].str.contains(i)]
                 df_rest = df_rest[~df_rest["标题"].str.contains(i)]
                 df_hit = pd.concat([df_hit,df_hit_i])
-    #             return df_hit
-    #         df_hit = get_hit(Hit)
-    #         def deal_hit(df_hit):
-            for i in bad_words:
-                i = i.lower()
-                df_rest = pd.concat([df_rest,df_hit[~df_hit["标题"].str.contains(i)]])
-                df_hit = df_hit[~df_hit["标题"].str.contains(i)]
+            if len(df_hit)==0:
+                showinfo("[ tip ]---命中数据为空")
+            else:
+                for i in bad_words:
+                    i = i.lower()
+                    df_rest = pd.concat([df_rest,df_hit[df_hit["标题"].str.contains(i)]])
+                    df_hit = df_hit[~df_hit["标题"].str.contains(i)]
             for i in hit_apps:
                 df_hit = pd.concat([df_hit,df_rest[df_rest["标题"].str.contains(i)]])
                 df_rest = df_rest[~df_rest["标题"].str.contains(i)]
-    #             return df_hit
-    #         df_hit = deal_hit(df_hit)
             df_hit.drop_duplicates(subset=["专利号"],keep="first",inplace=True)
             df_rest.drop_duplicates(subset=["专利号"],keep="first",inplace=True)
-    #         df_hit["标题长度"] = df_hit.apply(lambda row:len(row["标题"]),axis=1)
-    #         df_hit.sort_values(by="标题长度",inplace=True)
-            # df_hit = df_hit[["专利号","pdf下载链接"]]
             df_hit.to_excel("./已处理/命中数据.xlsx",index=None)
             df_all.to_excel("./已处理/全部数据.xlsx",index=None)
             df_rest.to_excel("./已处理/未命中数据.xlsx",index=None)
+            showinfo("[ test ]---"+str(len(df_hit))+"---"+str(len(df_rest)))
             showinfo("[ ok ]---深度数据整理完成，已保存到“/已处理”文件夹“命中数据.xlsx”中")
-            global check_1,check_2
             check_1 = False
             check_2 = False
             _check()
-        except:
-            showinfo("[ error ]---出现异常")
+    else:
+        showinfo("[ run ]---快速深度清理")
+        # global key_words,bad_words,hit_words
+        Hit = [i.lower() for i in key_words]
+        hit_apps = [i.lower() for i in hit_words]
+        for i in Hit:
+            df_hit_i = df_rest[df_rest["标题"].str.contains(i)]
+            df_rest = df_rest[~df_rest["标题"].str.contains(i)]
+            df_hit = pd.concat([df_hit,df_hit_i])
+        for i in hit_apps:
+            df_hit = pd.concat([df_hit,df_rest[df_rest["标题"].str.contains(i)]])
+            df_rest = df_rest[~df_rest["标题"].str.contains(i)]
+        if len(df_hit)==0:
+            showinfo("[ tip ]---命中数据为空")
+        else:
+            for i in bad_words:
+                i = i.lower()
+                df_rest = pd.concat([df_rest,df_hit[df_hit["标题"].str.contains(i)]])
+                df_hit = df_hit[~df_hit["标题"].str.contains(i)]
+        df_hit.drop_duplicates(subset=["专利号"],keep="first",inplace=True)
+        df_rest.drop_duplicates(subset=["专利号"],keep="first",inplace=True)
+        df_hit.to_excel("./已处理/命中数据.xlsx",index=None)
+        df_all.to_excel("./已处理/全部数据.xlsx",index=None)
+        df_rest.to_excel("./已处理/未命中数据.xlsx",index=None)
+        showinfo("[ test ]---"+str(len(df_hit))+"---"+str(len(df_rest)))
+        showinfo("[ ok ]---快速深度数据整理完成，已保存到“/已处理”文件夹“命中数据.xlsx”中")
+        check_1 = False
+        check_2 = False
+        _check()
 #pdf下载和整理
 def down_search(df):
     pdf_dir = "tmp/pdf/"
@@ -899,17 +983,11 @@ def pdf_down():
             if content_length == 0:
                 showinfo ('size0\t%s' % img_url)
                 return
-            try:
-                with open(os.path.join(img_dir,img_name),"wb") as f:
-                    for data in r.iter_content(8192):
-                        f.write(data)
-    #             jpg_name = img_name + ".jpg"    
-    #             page = convert_from_path(os.path.join(img_dir,img_name))
-    #             page[0].save(os.path.join(img_dir,jpg_name),"PNG")
-    #                 image = convert_from_path(os.path.join(img_dir,i))
-    #                 image[0].save(os.path.join(img_dir,name),"PNG")
-            except:
-                showinfo('savefail\t%s' % img_url)
+            with open(os.path.join(img_dir,img_name),"wb") as f:
+                for data in r.iter_content(8192):
+                    f.write(data)
+            # except:
+            #     showinfo('savefail\t%s' % img_url)
     lock = threading.Lock()
     
     def loop(imgs):
@@ -957,7 +1035,7 @@ def pdf_down():
         global failurls
         failurls = []
         for img_url, img_name in fail_urls:
-            img_name = img_name +".pdf"
+            img_name = str(img_name) +".pdf"
             if os.path.isfile(os.path.join(img_dir,img_name)):
                 return
             r = requests.get(img_url,stream=True,headers=headers,timeout=timeout)
@@ -983,14 +1061,14 @@ def pdf_down():
             if len(failurls)==0:
                 showinfo("[ ok ]---全部重下完成")
                 break
-            if len(os.listdir(img_dir)) == len_to_download:
-                showinfo("[ ok ]---全部重下完成")
-                break
+            # if len(os.listdir(img_dir)) == len_to_download:
+            #     showinfo("[ ok ]---全部重下完成")
+            #     break
             if flag >= 5:
                 showinfo("[ error ]---以下链接多次下载仍然失败")
                 showinfo(" 可尝试手动下载，放在image文件夹中")
                 for i,j in failurls:
-                    showinfo(i+j)
+                    showinfo(str(i)+str(j))
                 break
             tryagain_fail(failurls)
             flag += 1
@@ -1031,12 +1109,17 @@ def pdf_down():
         img_get.save("png_get/"+i)
         if j%50 == 0:
             showinfo("完成了"+str(j)+"个")
-    showinfo("[ ok ]---pdf转png成功，保存在png_get,png_time文件夹中")        
+    showinfo("[ ok ]---pdf转png成功，保存在png_get,png_time文件夹中")
+    _check()      
 
 def png2excel():
     showinfo("[ run ]---正在进行将图片插入到excel中")
+    global check_1,check_2
     try:
-        demo = xlrd.open_workbook("./已处理/命中数据.xlsx",on_demand=True)
+        df_out = pd.read_excel("./已处理/命中数据.xlsx")
+        df_out = df_out[["专利号","pdf下载链接"]]
+        df_out.to_excel("./已处理/命中数据(简洁).xlsx",index=None)
+        demo = xlrd.open_workbook("./已处理/命中数据(简洁).xlsx",on_demand=True)
         sheet_names = demo.sheet_names()
         final = xlsxwriter.Workbook("./已处理/最终结果.xlsx")
         for sheet_name in sheet_names:
@@ -1060,7 +1143,10 @@ def png2excel():
             worksheet.set_column(ncols-1,ncols,40)
             worksheet.set_column(ncols,ncols+1,25)
         final.close()
-        showinfo("[ ok ]---插入图片成功，已保存在cleaned文件夹img.xlsx中")
+        showinfo("[ ok ]---插入图片成功，已保存在cleaned文件夹'最终结果'.xlsx中")
+        check_1 = False
+        check_2 = False
+        _check()
     except:
         showinfo("[ error ]---出现未知错误")
 # def MyThread_vip():
@@ -1115,9 +1201,12 @@ def _check():
             df_rest = pd.read_excel("已处理/未命中数据.xlsx")
             df_hit = pd.read_excel("已处理/命中数据.xlsx")
             # df_hit = pd.merge(df_hit,df_all)
-            df_all = df_all.reindex(df_all['标题'].str.len().sort_values(ascending=True).index)
-            df_rest = df_rest.reindex(df_rest['标题'].str.len().sort_values(ascending=True).index)
-            df_hit = df_hit.reindex(df_hit['标题'].str.len().sort_values(ascending=True).index)
+            if len(df_all) != 0:
+                df_all = df_all.reindex(df_all['标题'].str.len().sort_values(ascending=True).index)
+            if len(df_rest) != 0:
+                df_rest = df_rest.reindex(df_rest['标题'].str.len().sort_values(ascending=True).index)
+            if len(df_hit) != 0:
+                df_hit = df_hit.reindex(df_hit['标题'].str.len().sort_values(ascending=True).index)
             df_all["是否下载"]=""
             df_hit["是否下载"]=""
             df_rest["是否下载"]=""
@@ -1127,7 +1216,8 @@ def _check():
                 for i in os.listdir("tmp/png_get/"):
                     ii = i.split(".")[0]
                     df_all.loc[df_all["专利号"]==ii,"是否下载"]=os.path.join("tmp/png_get/",i)
-                    df_hit.loc[df_hit["专利号"]==ii,"是否下载"]=os.path.join("tmp/png_get/",i)
+                    if '专利号' in list(df_hit.columns):  
+                        df_hit.loc[df_hit["专利号"]==ii,"是否下载"]=os.path.join("tmp/png_get/",i)
                     df_rest.loc[df_rest["专利号"]==ii,"是否下载"]=os.path.join("tmp/png_get/",i)
             if not os.path.exists("png_get/"):
                 pass
@@ -1135,7 +1225,8 @@ def _check():
                 for i in os.listdir("png_get/"):
                     ii = i.split(".")[0]
                     df_all.loc[df_all["专利号"]==ii,"是否下载"]=os.path.join("png_get/",i)
-                    df_hit.loc[df_hit["专利号"]==ii,"是否下载"]=os.path.join("png_get/",i)
+                    if '专利号' in list(df_hit.columns): 
+                        df_hit.loc[df_hit["专利号"]==ii,"是否下载"]=os.path.join("png_get/",i)
                     df_rest.loc[df_rest["专利号"]==ii,"是否下载"]=os.path.join("png_get/",i)
             check_1 = False
             check_2 = True
@@ -1148,13 +1239,34 @@ label_img.pack(fill="both", expand=True)
 
 
 key_frame.place(x=0,y=0)
-sea_frame.place(x=225,y=0)
-bad_frame.place(x=450,y=0)
-hit_frame.place(x=675,y=0)
+sea_frame.place(x=425,y=0)
+bad_frame.place(x=650,y=0)
+hit_frame.place(x=875,y=0)
 fun_frame.place(x=0,y=250)
 sho_frame.place(x=0,y=400)
 out_frame.place(x=450,y=250)
 png_frame.place(x=450,y=400)
 
+def on_closing():
+    ans = messagebox.askokcancel("退出", "是否自动保存记录?")
+    if ans:
+        if not os.path.exists("缓存"):
+            os.mkdir("缓存")
+        if len(hit_words)!= 0:
+            pd.DataFrame(hit_words).to_csv("缓存/新增命中词缓存.csv",header=FALSE,index=None)
+        if len(bad_words)!= 0:
+            pd.DataFrame(bad_words).to_csv("缓存/排除词缓存.csv",header=FALSE,index=None)
+        if len(sea_words)!= 0:
+            pd.DataFrame(sea_words).to_csv("缓存/搜索记录缓存.csv",header=FALSE,index=None)
+        if len(key_words)!= 0:
+            pd.DataFrame(key_words).to_csv("缓存/关键词缓存.csv",header=FALSE,index=None)
+        if len(done_words)!= 0:
+            pd.DataFrame(done_words).to_csv("缓存/done.csv",header=FALSE,index=None)
+        root.destroy()
+    else:
+        if len(done_words)!= 0:
+            pd.DataFrame(done_words).to_csv("缓存/done.csv",header=FALSE,index=None)
+        root.destroy()
 root.after(1000,_check)
+root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()
