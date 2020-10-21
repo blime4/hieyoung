@@ -4,18 +4,171 @@ from tkinter import messagebox
 from tkinter.filedialog import askdirectory
 import pandas as pd
 import os
-from nltk.tokenize import RegexpTokenizer
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from nltk.util import ngrams 
+import re
+# from nltk.tokenize import RegexpTokenizer
+# from nltk.corpus import stopwords
+# from nltk.tokenize import word_tokenize
+# from nltk.util import ngrams 
 import emoji
 from itertools import chain
 import threading
 import time
 paths = ""
 
+stopwords_list = ['i',
+ 'me',
+ 'my',
+ 'myself',
+ 'we',
+ 'our',
+ 'ours',
+ 'ourselves',
+ 'you',
+ "you're",
+ "you've",
+ "you'll",
+ "you'd",
+ 'your',
+ 'yours',
+ 'yourself',
+ 'yourselves',
+ 'he',
+ 'him',
+ 'his',
+ 'himself',
+ 'she',
+ "she's",
+ 'her',
+ 'hers',
+ 'herself',
+ 'it',
+ "it's",
+ 'its',
+ 'itself',
+ 'they',
+ 'them',
+ 'their',
+ 'theirs',
+ 'themselves',
+ 'what',
+ 'which',
+ 'who',
+ 'whom',
+ 'this',
+ 'that',
+ "that'll",
+ 'these',
+ 'those',
+ 'am',
+ 'is',
+ 'are',
+ 'was',
+ 'were',
+ 'be',
+ 'been',
+ 'being',
+ 'have',
+ 'has',
+ 'had',
+ 'having',
+ 'do',
+ 'does',
+ 'did',
+ 'doing',
+ 'a',
+ 'an',
+ 'the',
+ 'and',
+ 'but',
+ 'if',
+ 'or',
+ 'because',
+ 'as',
+ 'until',
+ 'while',
+ 'of',
+ 'at',
+ 'by',
+ 'for',
+ 'with',
+ 'about',
+ 'against',
+ 'between',
+ 'into',
+ 'through',
+ 'during',
+ 'before',
+ 'after',
+ 'above',
+ 'below',
+ 'to',
+ 'from',
+ 'up',
+ 'down',
+ 'in',
+ 'out',
+ 'on',
+ 'off',
+ 'over',
+ 'under',
+ 'again',
+ 'further',
+ 'then',
+ 'once',
+ 'here',
+ 'there',
+ 'when',
+ 'where',
+ 'why',
+ 'how',
+ 'all',
+ 'any',
+ 'both',
+ 'each',
+ 'few',
+ 'more',
+ 'most',
+ 'other',
+ 'some',
+ 'such',
+ 'no',
+ 'nor',
+ 'not',
+ 'only',
+ 'own',
+ 'same',
+ 'so',
+ 'than',
+ 'too',
+ 'very',
+ 's',
+ 't',
+ 'can',
+ 'will',
+ 'just',
+ 'don',
+ "don't",
+ 'should',
+ "should've",'now','d','ll','m','o','re','ve','y','ain','aren',"aren't",'couldn',"couldn't",'didn',"didn't",'doesn',"doesn't",'hadn',"hadn't",'hasn',"hasn't",'haven',"haven't",'isn',"isn't",'ma','mightn',"mightn't",'mustn',"mustn't",'needn',"needn't",'shan',"shan't",'shouldn',"shouldn't",'wasn',"wasn't",'weren',"weren't",'won',"won't",'wouldn',"wouldn't"]
 
+def pad_sequence(sequence,n):
+    sequence = iter(sequence)
+    return sequence
 
+def ngrams(sequence,n):
+    sequence = pad_sequence(sequence,n)
+    history = []
+    while n>1:
+        try:
+            next_item = next(sequence)
+        except StopIteration:
+            return
+        history.append(next_item)
+        n-=1
+    for item in sequence:
+        history.append(item)
+        yield tuple(history)
+        del history[0]
 def select_dir():
     global paths
     dir_ = askdirectory()
@@ -24,26 +177,19 @@ def select_dir():
         print(dir_)
         messagebox.showinfo('已选择',dir_)
 
+
 def output_excel():
     show_hide_canvas("show")
     fill_line = canvas.create_rectangle(1.5,1.5,0,23,width=0,fill="green")
-    # raise_data = 1 #增量大小
-    # n= 0
-    # for _ in range(100):
-    #     n += raise_data
-    #     canvas.coords(fill_line,(0,0,n,60))
-    #     root.update()
-    #     time.sleep(1)
-    # show_hide_canvas("hide")
     messagebox.showinfo('开始处理','已经在后台运行！请耐心等待，处理好会有“提示”的。不要随便关闭，点击确定后开始！')
     def get_one_two_three(selects):
         thgrams_selects = {}
         bigrams_selects = {}
         selects_token ={}
         for select in selects:
-            tokenizer = RegexpTokenizer(r'\w+')
-            tokens = tokenizer.tokenize(select)
-            tokens = [i for i in tokens if(i.lower() not in stopwords.words('english'))]
+            pat = '[a-zA-Z]+'
+            tokens = re.findall(pat,select)
+            tokens = [i for i in tokens if(i.lower() not in stopwords_list)]
             bigrams_t = ngrams(tokens, 2) 
             thgrams_t = ngrams(tokens, 3)
             tokens = list(set(tokens))

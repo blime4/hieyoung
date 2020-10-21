@@ -33,11 +33,12 @@ class MyThread(threading.Thread):
         self.func(*self.args)
 
 def showinfo(result):
-    realtime = time.strftime("%Y-%m-%d %H:%M:%S ")
+    realtime = time.strftime("%H:%M:%S ")
     textvar = realtime + result #系统时间和传入结果
     out_frame_Text.insert(END,textvar) #显示在text框里面
     out_frame_Text.insert(INSERT,'\n') #换行
     out_frame_Text.update()
+    out_frame_Text.see(END)
 
 
 
@@ -49,16 +50,16 @@ key_frame = Frame(width=425,height=250,bg="LightPink")
 sea_frame = Frame(width=225,height=250,bg="Yellow")
 bad_frame = Frame(width=225,height=250,bg="Thistle")
 hit_frame = Frame(width=225,height=250,bg="AntiqueWhite")
-fun_frame = Frame(width=450,height=150,bg="LightSeaGreen")
-out_frame = Frame(width=450,height=150,bg="green")
-png_frame = Frame(width=450,height=250)
-sho_frame = Frame(width=450,height=250)
+fun_frame = Frame(width=200,height=400,bg="LightSeaGreen")
+out_frame = Frame(width=600,height=150,bg="green")
+png_frame = Frame(width=300,height=400)
+sho_frame = Frame(width=600,height=250)
 df_all = pd.DataFrame()
 df_rest = pd.DataFrame()
 df_hit = pd.DataFrame()
 
-out_frame_Labelframe = LabelFrame(out_frame,width=450,height=300,text="输出信息",padx=10,pady=10)
-out_frame_Text = Text(out_frame_Labelframe,width=60,height=7)
+out_frame_Labelframe = LabelFrame(out_frame,width=500,height=300,text="输出信息",padx=10,pady=10)
+out_frame_Text = Text(out_frame_Labelframe,width=80,height=7)
 out_frame_Text.grid()
 out_frame_Labelframe.grid()
 
@@ -118,6 +119,7 @@ def hit_word_Fun(hit_word_var_):
             hit_word_Listbox.delete(0,END)
             for hit_word in hit_words:
                 hit_word_Listbox.insert(END,hit_word)
+            hit_word_Listbox.see(END)
             fast_clean_deep(str(hit_word_var_))
                 
 hit_word_Button = Button(hit_frame,text="添加",command=lambda :hit_word_Fun(hit_word_Var.get())).grid(row=0,column=1)
@@ -164,8 +166,9 @@ key_word_term2_Var.set("TERM2")
 key_word_Entry = Entry(key_frame,textvariable=key_word_Var)
 key_word_term2 = Entry(key_frame,textvariable=key_word_term2_Var)
 def key_word_Entry_bind(event):
-    key_word_Fun(key_word_Var.get(),"TERM2")
+    key_word_Fun(key_word_Var.get(),key_word_term2_Var.get())
 key_word_Entry.bind("<Return>", key_word_Entry_bind)
+key_word_term2.bind("<Return>", key_word_Entry_bind)
 key_word_Entry.grid(row=0,column=0)
 key_word_term2.grid(row=0,column=1)
 def key_word_Fun(key_word_var_,key_word_term2_var_):
@@ -184,6 +187,7 @@ def key_word_Fun(key_word_var_,key_word_term2_var_):
                 key_word_Listbox.delete(0,END)
                 for key_word in key_words:
                     key_word_Listbox.insert(END,key_word)
+                key_word_Listbox.see(END)
         else:
             key_two_ = key_word_var_.lower() +"&"+key_word_term2_var_.lower()
             if key_two_ in key_words:
@@ -193,6 +197,7 @@ def key_word_Fun(key_word_var_,key_word_term2_var_):
                 key_word_Listbox.delete(0,END)
                 for key_word in key_words:
                     key_word_Listbox.insert(END,key_word)
+                key_word_Listbox.see(END)
                 
 key_word_Button = Button(key_frame,text="添加",command=lambda :key_word_Fun(key_word_Var.get(),key_word_term2_Var.get())).grid(row=0,column=2)
 def key_word_save():
@@ -206,7 +211,7 @@ key_word_Listbox = Listbox(key_frame,height=10,width=60)
 # key_word_Listbox = Listbox(key_frame,height=10,width=60,yscrollcommand=key_word_Scrollbar.set)
 for key_word in key_words:
     key_word_Listbox.insert(END,key_word)
-key_word_Listbox.grid(row=1,columnspan=2)
+key_word_Listbox.grid(row=1,columnspan=3)
 # key_word_Scrollbar.config(command=key_word_Listbox.yview)
 def key_word_Listbox_delete(ACTIVE):
     global key_words
@@ -319,7 +324,7 @@ tmp = Frame(sho_frame)
 scrollbar = Scrollbar(tmp)
 # scrollbar.pack_forget()
 tree = Treeview(tmp,column=('c1', 'c2','c3'),show="headings",yscrollcommand=scrollbar.set,height=8)
-tree.column('c1', width=100, anchor='center')
+tree.column('c1', width=250, anchor='center')
 tree.column('c2', width=230, anchor='center')
 tree.column('c3', width=100, anchor='center')
 tree.heading('c1', text='标题')
@@ -350,7 +355,7 @@ tree.bind('<Button-1>', treeviewClick)
 tree.bind("<Button-3>",treeviewRightClick)
 # label_img = Label(tmp)
 # label_img.pack_forget()
-tmp.grid(row=1,column=0,columnspan=4)
+tmp.grid(row=1,column=0,columnspan=5)
 
 down_flag = ""
 
@@ -379,12 +384,17 @@ def download_search():
     _check()
     
     
-
+def wenjiajia():
+    try:
+        os.startfile(os.path.join(os.getcwd(),"已处理"))
+    except:
+        os.startfile(os.getcwd())
 
 df_all_button = Button(sho_frame,text="显示所有数据",command=show_df_all).grid(row=0,column=0)
 df_rest_button = Button(sho_frame,text="显示未命中数据",command=show_df_rest).grid(row=0,column=1)
 df_hit_button = Button(sho_frame,text="显示命中数据",command=show_df_hit).grid(row=0,column=2)
-download_search_Button = Button(sho_frame,text="下载图片",command=MyThread_download_search).grid(row=0,column=3)
+download_search_Button = Button(sho_frame,text="下载图片",command=MyThread_download_search).grid(row=0,column=4)
+show_wenjianjia_Button = Button(sho_frame,text="打开文件夹",command=wenjiajia).grid(row=0,column=3)
 search_all_button = Button(sho_frame,text="所有数据中",command=show_search_all)
 search_rest_button = Button(sho_frame,text="未命中数据中",command=show_search_rest)
 search_hit_button = Button(sho_frame,text="命中数据中",command=show_search_hit)
@@ -426,6 +436,7 @@ def sea_word_Fun(sea_word_var_):
             sea_word_Listbox.delete(0,END)
             for sea_word in sea_words:
                 sea_word_Listbox.insert(END,sea_word)
+            sea_word_Listbox.see(END)
                 
 sea_word_Button = Button(sea_frame,text="添加",command=lambda:sea_word_Fun(sea_word_Var.get())).grid(row=0,column=1)
 def sea_word_save():
@@ -479,6 +490,7 @@ def bad_word_Fun(bad_word_var_):
             bad_word_Listbox.delete(0,END)
             for bad_word in bad_words:
                 bad_word_Listbox.insert(END,bad_word)
+            bad_word_Listbox.see(END)
             clean_deep()
                 
 bad_word_Button = Button(bad_frame,text="添加",command=lambda:bad_word_Fun(bad_word_Var.get())).grid(row=0,column=1)
@@ -562,6 +574,7 @@ def spider():
                 total_len = 0
             if total_len == 0:
                 showinfo(key+"---没有找到匹配专利")
+                done_words.append(key)
             else:
                 page_num = int(float(total_len)/50.5)+2
                 showinfo(key+"一共"+str(total_len)+"个专利，共"+str(page_num-1)+"页")
@@ -632,25 +645,27 @@ def spider():
             async with aiohttp.ClientSession() as session:
                 html,key = await get_page_s(session,key,url)
                 await parser_s(html,key)
-                done_words.append(key)
                 await asyncio.sleep(int(time_sacle))
         start = time.time()
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         tasks = [asyncio.ensure_future(download(key)) for key in key_urls]
-        loop.run_until_complete(asyncio.wait(tasks))
-
+        if len(tasks) != 0:
+            loop.run_until_complete(asyncio.wait(tasks))
+        showinfo("[ tip ]---所有第一页已经爬取完成")
         tasks_s = []
         loop_s = asyncio.new_event_loop()
         asyncio.set_event_loop(loop_s)
         for key in pages_key_urls:
             for url in pages_key_urls[key]:
                 tasks_s.append(asyncio.ensure_future(download_s(key,url)))
-        loop_s.run_until_complete(asyncio.wait(tasks_s))
+        if len(tasks_s) !=0:
+            loop_s.run_until_complete(asyncio.wait(tasks_s))
         showinfo("#"*40)
         end = time.time()
         showinfo('总共耗时{}秒'.format(end-start))
         showinfo("[ ok ]---全部导出完毕，保存在“原始数据”文件夹中")
+        
         clean()
         clean_deep()
 
@@ -1170,18 +1185,18 @@ def get_time_scale_var():
     time_sacle = str(time_scale_var.get())
 
 
-fun_frame_Labelframe = LabelFrame(fun_frame,width=450,height=100,text="功能区",padx=10,pady=10)
+fun_frame_Labelframe = LabelFrame(fun_frame,width=200,height=400,text="功能区",padx=10,pady=10)
 fun_frame_Label = Label(fun_frame_Labelframe,text="爬取时间间隔设置: 秒").grid(row=0,column=0,sticky=E+W)
-fun_frame_Spinbox = Spinbox(fun_frame_Labelframe,from_=1,to=100,increment=1,textvariable=time_scale_var,command=get_time_scale_var).grid(row=0,column=1,sticky=E+W)
-fun_frame_Button_spider = Button(fun_frame_Labelframe,text="开始爬取数据",command=MyThread_spider).grid(row=0,column=2,sticky=E+W)        
-fun_frame_Button_clean = Button(fun_frame_Labelframe,text="初步数据整理",command=clean).grid(row=1,column=0,sticky=E+W)
-fun_frame_Button_clean_deep = Button(fun_frame_Labelframe,text="深度数据整理",command=clean_deep).grid(row=1,column=1,sticky=E+W)
-fun_frame_Button_pdf_download = Button(fun_frame_Labelframe,text="pdf下载和整理",command=MyThread_pdf).grid(row=1,column=2,sticky=E+W)
-fun_frame_Button_png2excel = Button(fun_frame_Labelframe,text="插入图片到excel",command=png2excel).grid(row=2,column=0,sticky=E+W)
+fun_frame_Spinbox = Spinbox(fun_frame_Labelframe,from_=1,to=100,increment=1,textvariable=time_scale_var,command=get_time_scale_var).grid(row=1,column=0,sticky=E+W)
+fun_frame_Button_spider = Button(fun_frame_Labelframe,text="开始爬取数据",command=MyThread_spider,pady=10).grid(row=2,column=0,sticky=E+W)        
+fun_frame_Button_clean = Button(fun_frame_Labelframe,text="初步数据整理",command=clean).grid(row=3,column=0,sticky=E+W)
+fun_frame_Button_clean_deep = Button(fun_frame_Labelframe,text="深度数据整理",command=clean_deep).grid(row=4,column=0,sticky=E+W)
+fun_frame_Button_pdf_download = Button(fun_frame_Labelframe,text="pdf下载和整理",command=MyThread_pdf,pady=10).grid(row=5,column=0,sticky=E+W)
+fun_frame_Button_png2excel = Button(fun_frame_Labelframe,text="插入图片到excel",command=png2excel,pady=10).grid(row=6,column=0,sticky=E+W)
 pil_image = Image.new('RGB', (500, 500), (255,255,255))
 tk_image = ImageTk.PhotoImage(pil_image)
 
-fun_frame_Button_vip = Button(fun_frame_Labelframe,text="一键完成爬取清洗下载保存导出",command=vip,width=40).grid(row=2,column=1,columnspan=2,sticky=W)
+fun_frame_Button_vip = Button(fun_frame_Labelframe,text="一键爬取清洗下载保存导出",command=vip,pady=15).grid(row=7,column=0,columnspan=2,sticky=E+W)
 fun_frame_Labelframe.grid()
 
 # 爬取数据之后
@@ -1235,7 +1250,7 @@ def _check():
             show_df_all()
 
 label_img = Label(png_frame,image=tk_image)
-label_img.pack(fill="both", expand=True)
+label_img.pack(expand=True,anchor="center",fill="both")
 
 
 key_frame.place(x=0,y=0)
@@ -1243,9 +1258,9 @@ sea_frame.place(x=425,y=0)
 bad_frame.place(x=650,y=0)
 hit_frame.place(x=875,y=0)
 fun_frame.place(x=0,y=250)
-sho_frame.place(x=0,y=400)
-out_frame.place(x=450,y=250)
-png_frame.place(x=450,y=400)
+sho_frame.place(x=200,y=400)
+out_frame.place(x=200,y=250)
+png_frame.place(x=800,y=250)
 
 def on_closing():
     ans = messagebox.askokcancel("退出", "是否自动保存记录?")
