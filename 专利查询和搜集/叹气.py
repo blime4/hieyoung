@@ -19,21 +19,10 @@ nest_asyncio.apply()
 import fitz
 from shutil import copyfile
 import threading
-import webbrowser
 import aiomultiprocess
-import multiprocessing
+import webbrowser
 
-class MyThread(threading.Thread):
-    def __init__(self,func,*args):
-        super().__init__()
-        self.func = func
-        self.args = args
-        self.setDaemon(True)
-        self.start()
-    def run(self):
-        self.func(*self.args)
 if __name__ == "__main__":
-        
     def showinfo(result):
         realtime = time.strftime("%H:%M:%S ")
         textvar = realtime + result #系统时间和传入结果
@@ -41,72 +30,69 @@ if __name__ == "__main__":
         out_frame_Text.insert(INSERT,'\n') #换行
         out_frame_Text.update()
         out_frame_Text.see(END)
+    
 
 
 
-    root = Tk()
-    root.geometry('1100x650')
-    root.title("专利查询和搜索")
-
-    key_frame = Frame(width=425,height=250,bg="LightPink")
-    sea_frame = Frame(width=225,height=250,bg="Yellow")
-    bad_frame = Frame(width=225,height=250,bg="Thistle")
-    hit_frame = Frame(width=225,height=250,bg="AntiqueWhite")
-    fun_frame = Frame(width=200,height=400,bg="LightSeaGreen")
-    out_frame = Frame(width=600,height=150,bg="green")
-    png_frame = Frame(width=300,height=400)
-    sho_frame = Frame(width=600,height=250)
-    df_all = pd.DataFrame()
-    df_rest = pd.DataFrame()
-    df_hit = pd.DataFrame()
-
-    out_frame_Labelframe = LabelFrame(out_frame,width=500,height=300,text="输出信息",padx=10,pady=10)
-    out_frame_Text = Text(out_frame_Labelframe,width=80,height=7)
-    out_frame_Text.grid()
-    out_frame_Labelframe.grid()
-
-
-    key_words = []
-    bad_words = []
-    hit_words = []
-    sea_words = []
-    done_words = []
-    # bad_words = ["augmented reality","reversible","system","method","tool","process","indicator","technique","saucer"]
-
-    if os.path.exists("缓存"):
-        if os.path.isfile("缓存/排除词缓存.csv"):
-            bad_words = list(pd.read_csv("缓存/排除词缓存.csv",header=None)[0])
-            showinfo("[ ok ]---导入排除词成功")
-        if os.path.exists("缓存/新增命中词缓存.csv"):
-            hit_words = list(pd.read_csv("缓存/新增命中词缓存.csv",header=None)[0])
-            showinfo("[ ok ]---导入新增命中词成功")
-        if os.path.exists("缓存/搜索记录缓存.csv"):
-            sea_words = list(pd.read_csv("缓存/搜索记录缓存.csv",header=None)[0])
-            showinfo("[ ok ]---导入搜索记录成功")
-        if os.path.exists("缓存/关键词缓存.csv"):
-            key_words = list(pd.read_csv("缓存/关键词缓存.csv",header=None)[0])
-            showinfo("[ ok ]---导入关键词成功")
-        if os.path.exists("缓存/done.csv"):
-            done_words = list(pd.read_csv("缓存/done.csv",header=None)[0])
-            showinfo("[ ok ]---导入done成功")
-
-    time_sacle = "5"
-    failurls = []
-    w_box = 400   
-    h_box = 400
-    headers = {
-        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.122 Safari/537.36"
-    }
-
-    SURL = "http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO2&Sect2=HITOFF&p=page_change&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=0&f=S&l=50&TERM1=search_change&FIELD1=&co1=AND&TERM2=&FIELD2=&d=PTXT"
-    SURL_2 = "http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO2&Sect2=HITOFF&p=page_change&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=0&f=S&l=50&TERM1=search_change&FIELD1=&co1=AND&TERM2=term2_change&FIELD2=&d=PTXT"
-    hit_word_Var = StringVar()
-    hit_word_Var.set("新增命中词")
-    hit_word_Entry = Entry(hit_frame,textvariable=hit_word_Var)
+    class MyThread(threading.Thread):
+        def __init__(self,func,*args):
+            super().__init__()
+            self.func = func
+            self.args = args
+            self.setDaemon(True)
+            self.start()
+        def run(self):
+            self.func(*self.args)
+    def _check():
+        global check_1,check_2
+        global df_rest,df_all,df_hit
+        if check_2 == False:
+            if os.path.exists("已处理"):
+                if os.path.isfile("已处理/全部数据.xlsx") and os.path.isfile("已处理/未命中数据.xlsx") and os.path.isfile("已处理/命中数据.xlsx"):
+                    check_1 = True
+                    # showinfo("[ tip ] check_1 = True")
+            if check_1:
+                df_all = pd.read_excel("已处理/全部数据.xlsx")
+                df_rest = pd.read_excel("已处理/未命中数据.xlsx")
+                df_hit = pd.read_excel("已处理/命中数据.xlsx")
+                # df_hit = pd.merge(df_hit,df_all)
+                if len(df_all) != 0:
+                    df_all = df_all.reindex(df_all['标题'].str.len().sort_values(ascending=True).index)
+                if len(df_rest) != 0:
+                    df_rest = df_rest.reindex(df_rest['标题'].str.len().sort_values(ascending=True).index)
+                if len(df_hit) != 0:
+                    df_hit = df_hit.reindex(df_hit['标题'].str.len().sort_values(ascending=True).index)
+                df_all["是否下载"]=""
+                df_hit["是否下载"]=""
+                df_rest["是否下载"]=""
+                if not os.path.exists("tmp/png_get/"):
+                    pass
+                else:
+                    for i in os.listdir("tmp/png_get/"):
+                        ii = i.split(".")[0]
+                        df_all.loc[df_all["专利号"]==ii,"是否下载"]=os.path.join("tmp/png_get/",i)
+                        if '专利号' in list(df_hit.columns):  
+                            df_hit.loc[df_hit["专利号"]==ii,"是否下载"]=os.path.join("tmp/png_get/",i)
+                        df_rest.loc[df_rest["专利号"]==ii,"是否下载"]=os.path.join("tmp/png_get/",i)
+                if not os.path.exists("png_get/"):
+                    pass
+                else:
+                    for i in os.listdir("png_get/"):
+                        ii = i.split(".")[0]
+                        df_all.loc[df_all["专利号"]==ii,"是否下载"]=os.path.join("png_get/",i)
+                        if '专利号' in list(df_hit.columns): 
+                            df_hit.loc[df_hit["专利号"]==ii,"是否下载"]=os.path.join("png_get/",i)
+                        df_rest.loc[df_rest["专利号"]==ii,"是否下载"]=os.path.join("png_get/",i)
+                check_1 = False
+                check_2 = True
+                # showinfo("[ tip ] check_1 = False")
+                showinfo("[ tip ] check = True")
+                show_df_all()
+    def get_time_scale_var():
+        global time_sacle
+        time_sacle = str(time_scale_var.get())
     def hit_word_Entry_bind(event):
         hit_word_Fun(hit_word_Var.get())
-    hit_word_Entry.bind("<Return>", hit_word_Entry_bind)
-    hit_word_Entry.grid(row=0,column=0)
     def hit_word_Fun(hit_word_var_):
         global hit_words
         if hit_word_var_ == "":
@@ -123,21 +109,11 @@ if __name__ == "__main__":
                     hit_word_Listbox.insert(END,hit_word)
                 hit_word_Listbox.see(END)
                 fast_clean_deep(str(hit_word_var_))
-                    
-    hit_word_Button = Button(hit_frame,text="添加",command=lambda :hit_word_Fun(hit_word_Var.get())).grid(row=0,column=1)
     def hit_word_save():
         if not os.path.exists("缓存"):
             os.mkdir("缓存")
         pd.DataFrame(hit_words).to_csv("缓存/新增命中词缓存.csv",header=FALSE,index=None)
         showinfo("[ ok ]---已保存到cache文件夹中")
-
-    hit_word_save_Button = Button(hit_frame,text="保存",command=hit_word_save).grid(row=2,column=1)
-    hit_word_Listbox = Listbox(hit_frame,height=10,width=32)
-    # hit_word_Listbox = Listbox(hit_frame,height=10,width=60,yscrollcommand=hit_word_Scrollbar.set)
-    for hit_word in hit_words:
-        hit_word_Listbox.insert(END,hit_word)
-    hit_word_Listbox.grid(row=1,columnspan=2)
-    # hit_word_Scrollbar.config(command=hit_word_Listbox.yview)
     def delete_hit_word(hit_app):
         # showinfo("[ run ]---开始自动快速整理")
         df_hit = pd.read_excel("./已处理/命中数据.xlsx")
@@ -159,20 +135,15 @@ if __name__ == "__main__":
         hit_word_Listbox.delete(0,END)
         for hit_word in hit_words:
             hit_word_Listbox.insert(END,hit_word)
-
-    hit_word_Listbox_Button = Button(hit_frame,text="删除命中词",command=lambda:hit_word_Listbox_delete(ACTIVE)).grid(row=2,columnspan=2)
-    key_word_Var = StringVar()
-    key_word_term2_Var = StringVar()
-    key_word_Var.set("填写关键词")
-    key_word_term2_Var.set("TERM2")
-    key_word_Entry = Entry(key_frame,textvariable=key_word_Var)
-    key_word_term2 = Entry(key_frame,textvariable=key_word_term2_Var)
     def key_word_Entry_bind(event):
         key_word_Fun(key_word_Var.get(),key_word_term2_Var.get())
-    key_word_Entry.bind("<Return>", key_word_Entry_bind)
-    key_word_term2.bind("<Return>", key_word_Entry_bind)
-    key_word_Entry.grid(row=0,column=0)
-    key_word_term2.grid(row=0,column=1)
+    def key_word_Listbox_delete(ACTIVE):
+        global key_words
+        key_words = [j for i,j in enumerate(key_words) if i != int(key_word_Listbox.curselection()[0])]
+        key_word_Listbox.delete(ACTIVE)
+        key_word_Listbox.delete(0,END)
+        for key_word in key_words:
+            key_word_Listbox.insert(END,key_word)
     def key_word_Fun(key_word_var_,key_word_term2_var_):
         global key_words
         if key_word_var_ == "":
@@ -200,41 +171,13 @@ if __name__ == "__main__":
                     for key_word in key_words:
                         key_word_Listbox.insert(END,key_word)
                     key_word_Listbox.see(END)
-                    
-    key_word_Button = Button(key_frame,text="添加",command=lambda :key_word_Fun(key_word_Var.get(),key_word_term2_Var.get())).grid(row=0,column=2)
     def key_word_save():
         if not os.path.exists("缓存"):
             os.mkdir("缓存")
         pd.DataFrame(key_words).to_csv("缓存/关键词缓存.csv",header=FALSE,index=None)
         showinfo("[ ok ]---已保存到cache文件夹中")
-
-    key_word_save_Button = Button(key_frame,text="保存",command=key_word_save).grid(row=2,column=1)
-    key_word_Listbox = Listbox(key_frame,height=10,width=60)
-    # key_word_Listbox = Listbox(key_frame,height=10,width=60,yscrollcommand=key_word_Scrollbar.set)
-    for key_word in key_words:
-        key_word_Listbox.insert(END,key_word)
-    key_word_Listbox.grid(row=1,columnspan=3)
-    # key_word_Scrollbar.config(command=key_word_Listbox.yview)
-    def key_word_Listbox_delete(ACTIVE):
-        global key_words
-    #     showinfo(int(key_word_Listbox.curselection()[0]))
-        key_words = [j for i,j in enumerate(key_words) if i != int(key_word_Listbox.curselection()[0])]
-        key_word_Listbox.delete(ACTIVE)
-        key_word_Listbox.delete(0,END)
-        for key_word in key_words:
-            key_word_Listbox.insert(END,key_word)
-
-    key_word_Listbox_Button = Button(key_frame,text="删除关键词",command=lambda:key_word_Listbox_delete(ACTIVE)).grid(row=2,columnspan=2)
-
-
-    sea_word_Var = StringVar()
-    sea_word_Var.set("search_something")
-    sea_word_Entry = Entry(sea_frame,textvariable=sea_word_Var)
     def sea_word_Entry_bind(event):
         sea_word_Fun(sea_word_Var.get())
-
-    sea_word_Entry.bind("<Return>", sea_word_Entry_bind)
-    sea_word_Entry.grid(row=0,column=0)
     def write():
         pil_image = Image.new('RGB', (500, 500), (255,255,255))
         tk_image = ImageTk.PhotoImage(pil_image)
@@ -322,48 +265,8 @@ if __name__ == "__main__":
         # label_img.grid(row=1,column=0,columnspan=3)
         global down_flag
         down_flag="rest"
-    tmp = Frame(sho_frame)
-    scrollbar = Scrollbar(tmp)
-    # scrollbar.pack_forget()
-    tree = Treeview(tmp,column=('c1', 'c2','c3'),show="headings",yscrollcommand=scrollbar.set,height=8)
-    tree.column('c1', width=250, anchor='center')
-    tree.column('c2', width=230, anchor='center')
-    tree.column('c3', width=100, anchor='center')
-    tree.heading('c1', text='标题')
-    tree.heading('c2', text='pdf下载链接')
-    tree.heading('c3', text='本地是否下载')
-    tree.pack(side=LEFT, fill=Y)
-    scrollbar.pack(side=RIGHT,fill=Y)
-    scrollbar.config(command=tree.yview)
-    def treeviewClick(event):
-        for item in tree.selection():
-            item_text = tree.item(item,"values")
-            if item_text[2]!="":
-                # showinfo(item_text[2])
-                img = Image.open(str(item_text[2]))
-                img_resized = resize(w_box,h_box,img)
-                tk_resized = ImageTk.PhotoImage(img_resized)
-                # label_img.grid(row=2,column=0,columnspan=3)
-                label_img.configure(image=tk_resized)
-                label_img.image = tk_resized
-            else:
-                write()
-    def treeviewRightClick(event):
-        for item in tree.selection():
-            item_text = tree.item(item,"values")
-            # showinfo(item_text[1])
-            webbrowser.open(item_text[1])
-    tree.bind('<Button-1>', treeviewClick)
-    tree.bind("<Button-3>",treeviewRightClick)
-    # label_img = Label(tmp)
-    # label_img.pack_forget()
-    tmp.grid(row=1,column=0,columnspan=5)
-
-    down_flag = ""
-
     def MyThread_download_search():
         MyThread(download_search)
-
     def download_search():
         showinfo("download_search")
         showinfo(down_flag)
@@ -383,28 +286,30 @@ if __name__ == "__main__":
         global check_1,check_2
         check_1 = False
         check_2 = False
-        _check()
-        
-        
+        _check()    
     def wenjiajia():
         try:
             os.startfile(os.path.join(os.getcwd(),"已处理"))
         except:
             os.startfile(os.getcwd())
-
-    df_all_button = Button(sho_frame,text="显示所有数据",command=show_df_all).grid(row=0,column=0)
-    df_rest_button = Button(sho_frame,text="显示未命中数据",command=show_df_rest).grid(row=0,column=1)
-    df_hit_button = Button(sho_frame,text="显示命中数据",command=show_df_hit).grid(row=0,column=2)
-    download_search_Button = Button(sho_frame,text="下载图片",command=MyThread_download_search).grid(row=0,column=4)
-    show_wenjianjia_Button = Button(sho_frame,text="打开文件夹",command=wenjiajia).grid(row=0,column=3)
-    search_all_button = Button(sho_frame,text="所有数据中",command=show_search_all)
-    search_rest_button = Button(sho_frame,text="未命中数据中",command=show_search_rest)
-    search_hit_button = Button(sho_frame,text="命中数据中",command=show_search_hit)
-
-    search_all_button.grid_forget()
-    search_rest_button.grid_forget()
-    search_hit_button.grid_forget()
-    # tmp.grid_forget()
+    def treeviewClick(event):
+        for item in tree.selection():
+            item_text = tree.item(item,"values")
+            if item_text[2]!="":
+                # showinfo(item_text[2])
+                img = Image.open(str(item_text[2]))
+                img_resized = resize(w_box,h_box,img)
+                tk_resized = ImageTk.PhotoImage(img_resized)
+                # label_img.grid(row=2,column=0,columnspan=3)
+                label_img.configure(image=tk_resized)
+                label_img.image = tk_resized
+            else:
+                write()
+    def treeviewRightClick(event):
+        for item in tree.selection():
+            item_text = tree.item(item,"values")
+            # showinfo(item_text[1])
+            webbrowser.open(item_text[1])
     def muti_search(df_all,search_tmp):
         df_for = df_all[df_all["标题"].str.contains(search_tmp.split("+")[0])]
 
@@ -412,7 +317,6 @@ if __name__ == "__main__":
             df_for = df_for[df_for["标题"].str.contains(i)]
 
         return df_for
-
     def sea_word_Fun(sea_word_var_):
         global sea_words
         if sea_word_var_ == "":
@@ -439,43 +343,22 @@ if __name__ == "__main__":
                 for sea_word in sea_words:
                     sea_word_Listbox.insert(END,sea_word)
                 sea_word_Listbox.see(END)
-                    
-    sea_word_Button = Button(sea_frame,text="添加",command=lambda:sea_word_Fun(sea_word_Var.get())).grid(row=0,column=1)
     def sea_word_save():
         if not os.path.exists("缓存"):
             os.mkdir("缓存")
         pd.DataFrame(sea_words).to_csv("缓存/搜索记录缓存.csv",header=FALSE,index=None)
         showinfo("[ ok ]---已保存到cache文件夹中")
-
-    sea_word_save_Button = Button(sea_frame,text="保存",command=sea_word_save).grid(row=2,column=1)
-    sea_word_Listbox = Listbox(sea_frame,height=10,width=32)
-    # sea_word_Listbox = Listbox(sea_frame,height=10,width=60,yscrollcommand=sea_word_Scrollbar.set)
-    for sea_word in sea_words:
-        sea_word_Listbox.insert(END,sea_word)
-    sea_word_Listbox.grid(row=1,columnspan=2)
-    # sea_word_Scrollbar.config(command=sea_word_Listbox.yview)
     def sea_word_Listbox_delete(ACTIVE):
         global sea_words
-    #     showinfo(int(sea_word_Listbox.curselection()[0]))
         sea_words = [j for i,j in enumerate(sea_words) if i != int(sea_word_Listbox.curselection()[0])]
         sea_word_Listbox.delete(ACTIVE)
         sea_word_Listbox.delete(0,END)
         for sea_word in sea_words:
             sea_word_Listbox.insert(END,sea_word)
     def sea_word_Listbox_double(event):
-        # showinfo()
-        sea_word_Fun(sea_word_Listbox.get(sea_word_Listbox.curselection()))
-    sea_word_Listbox_Button = Button(sea_frame,text="删除搜索记录",command=lambda:sea_word_Listbox_delete(ACTIVE)).grid(row=2,columnspan=2)
-    sea_word_Listbox.bind("<Double-1>",sea_word_Listbox_double)
-
-
-    bad_word_Var = StringVar()
-    bad_word_Var.set("填写排除词")
-    bad_word_Entry = Entry(bad_frame,textvariable=bad_word_Var)
+        sea_word_Fun(sea_word_Listbox.get(sea_word_Listbox.curselection()))    
     def bad_word_Entry_bind(event):
         bad_word_Fun(bad_word_Var.get())
-    bad_word_Entry.bind("<Return>", bad_word_Entry_bind)
-    bad_word_Entry.grid(row=0,column=0)
     def bad_word_Fun(bad_word_var_):
         global bad_words,hit_words
         if bad_word_var_ == "":
@@ -494,37 +377,23 @@ if __name__ == "__main__":
                     bad_word_Listbox.insert(END,bad_word)
                 bad_word_Listbox.see(END)
                 clean_deep()
-                    
-    bad_word_Button = Button(bad_frame,text="添加",command=lambda:bad_word_Fun(bad_word_Var.get())).grid(row=0,column=1)
-    bad_word_Listbox = Listbox(bad_frame,height=10,width=32)
-    for bad_word in bad_words:
-        bad_word_Listbox.insert(END,bad_word)
-    bad_word_Listbox.grid(row=1,column=0,columnspan=2)
-
     def bad_word_Listbox_delete(ACTIVE):
         global bad_words
-    #     showinfo(int(bad_word_Listbox.curselection()[0]))
         bad_words = [j for i,j in enumerate(bad_words) if i != int(bad_word_Listbox.curselection()[0])]
         bad_word_Listbox.delete(ACTIVE)
         bad_word_Listbox.delete(0,END)
         for bad_word in bad_words:
             bad_word_Listbox.insert(END,bad_word)
         clean_deep()
-
     def bad_word_save():
         if not os.path.exists("缓存"):
             os.mkdir("缓存")
         pd.DataFrame(bad_words).to_csv("缓存/排除词缓存.csv",header=FALSE,index=None)
         showinfo("[ ok ]---已保存到cache文件夹中")
-
-    bad_word_Listbox_Button = Button(bad_frame,text="删除排除词",command=lambda:bad_word_Listbox_delete(ACTIVE)).grid(row=2,column=0)
-    bad_word_save_Button = Button(bad_frame,text="保存",command=bad_word_save).grid(row=2,column=1)
-
     def MyThread_pdf():
         MyThread(pdf_down)
     def MyThread_spider():
         MyThread(spider)
-    #开始爬取数据
     def spider():
         global key_words,done_words
         if len(key_words)==0:
@@ -556,7 +425,6 @@ if __name__ == "__main__":
                     key_urls[key_word]=url_1
             url_lst_failed = []
             url_lst_successed = []
-            pages_key_urls = {}
             global time_sacle
             async def get_page(session,key):
                 async with session.get(key_urls[key], timeout=300) as resp:
@@ -580,16 +448,14 @@ if __name__ == "__main__":
                 else:
                     page_num = int(float(total_len)/50.5)+2
                     showinfo(key+"一共"+str(total_len)+"个专利，共"+str(page_num-1)+"页")
+                    urls = []
                     if page_num >= 2:
                         for i in range(2,page_num):
                             key_words_url = SURL
                             key_words_url = key_words_url.replace("search_change",str(key))
                             url_i = key_words_url
                             url_i = url_i.replace("page_change",str(i))
-                            if key not in pages_key_urls:
-                                pages_key_urls[key] = [url_i]
-                            else:
-                                pages_key_urls[key].append(url_i)
+                            urls.append(url_i)
                     soup_tb = soup.find_all("table")
                     for tb in soup_tb:
                         for tr in tb.find_all("tr"):
@@ -608,6 +474,7 @@ if __name__ == "__main__":
                     page_df = pd.DataFrame(page_dict)
                     page_df.to_csv("./原始数据/"+key+".csv",index=None,header=False)
                     showinfo("导出"+key+"第一页")
+                    return urls
             async def get_page_s(session,key,url):
                 async with session.get(url, timeout=60) as resp:
                     if resp.status != 200:
@@ -638,31 +505,28 @@ if __name__ == "__main__":
                 page_df = pd.DataFrame(page_dict)
                 page_df.to_csv("./原始数据/"+key+".csv",index=None,mode='a',header=False)
                 showinfo(key+" +1")
-            async def download(key):
-                async with aiohttp.ClientSession() as session:
-                    html,key = await get_page(session,key)
-                    await parser(html,key)
-                    await asyncio.sleep(int(time_sacle))
-            async def download_s(key,url):
+            async def download_s(kurl):
+                key,url = kurl
                 async with aiohttp.ClientSession() as session:
                     html,key = await get_page_s(session,key,url)
                     await parser_s(html,key)
                     await asyncio.sleep(int(time_sacle))
+            async def download(key):
+                async with aiohttp.ClientSession() as session:
+                    html,key = await get_page(session,key)
+                    urls = await parser(html,key)
+                    urls = [[key,i] for i in urls]
+                    async with aiomultiprocess.Pool() as pool:
+                        await pool.map(download_s,urls)
+                    await asyncio.sleep(int(time_sacle))
+            
             start = time.time()
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             tasks = [asyncio.ensure_future(download(key)) for key in key_urls]
             if len(tasks) != 0:
                 loop.run_until_complete(asyncio.wait(tasks))
-            showinfo("[ tip ]---所有第一页已经爬取完成")
-            tasks_s = []
-            loop_s = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop_s)
-            for key in pages_key_urls:
-                for url in pages_key_urls[key]:
-                    tasks_s.append(asyncio.ensure_future(download_s(key,url)))
-            if len(tasks_s) !=0:
-                loop_s.run_until_complete(asyncio.wait(tasks_s))
+                showinfo("[ tip ]---所有第一页已经爬取完成")
             showinfo("#"*40)
             end = time.time()
             showinfo('总共耗时{}秒'.format(end-start))
@@ -670,8 +534,6 @@ if __name__ == "__main__":
             
             clean()
             clean_deep()
-
-    # 清洗源数据
     def clean():
         def data_deal(df):
             def title_change(title):
@@ -726,8 +588,6 @@ if __name__ == "__main__":
                     df.to_excel(writer,sheet_name=key,index=None)
                 showinfo("[ ok ]---数据清洗完成，已保存到“/已处理”文件夹中")
                 writer.close()
-
-
     def fast_clean_deep(hit_app):
         showinfo("[ run ]---开始自动快速整理")
         df_hit = pd.read_excel("./已处理/命中数据.xlsx")
@@ -741,8 +601,6 @@ if __name__ == "__main__":
         check_1 = False
         check_2 = False
         _check()
-        
-    #深度清洗源数据
     def clean_deep():
         global df_rest,df_all,df_hit
         global check_1,check_2
@@ -819,7 +677,6 @@ if __name__ == "__main__":
             check_1 = False
             check_2 = False
             _check()
-    #pdf下载和整理
     def down_search(df):
         pdf_dir = "tmp/pdf/"
         png_dir = "tmp/png/"
@@ -971,8 +828,6 @@ if __name__ == "__main__":
             if j%50 == 0:
                 showinfo("完成了"+str(j)+"个")
         showinfo("[ ok ]---pdf转png成功，保存在png_get,png_time文件夹中")        
-
-
     def pdf_down():
         showinfo("[ run ]---正在进行pdf下载")
         showinfo("[ tip ]---这一步需要很长时间，请耐心等待。")
@@ -1128,7 +983,6 @@ if __name__ == "__main__":
                 showinfo("完成了"+str(j)+"个")
         showinfo("[ ok ]---pdf转png成功，保存在png_get,png_time文件夹中")
         _check()      
-
     def png2excel():
         showinfo("[ run ]---正在进行将图片插入到excel中")
         global check_1,check_2
@@ -1166,8 +1020,6 @@ if __name__ == "__main__":
             _check()
         except:
             showinfo("[ error ]---出现未知错误")
-    # def MyThread_vip():
-    #     MyThread(vip)
     def vip():
         showinfo("[ start ]---程序开始自动运行")
         showinfo("[ tip ]---请耐心等待")
@@ -1178,92 +1030,6 @@ if __name__ == "__main__":
         pdf_down()
         png2excel()
         showinfo("[ ok ]---一键操作完成")
-        
-
-    time_scale_var = StringVar()
-    time_scale_var.set("5")
-    def get_time_scale_var():
-        global time_sacle
-        time_sacle = str(time_scale_var.get())
-
-
-    fun_frame_Labelframe = LabelFrame(fun_frame,width=200,height=400,text="功能区",padx=10,pady=10)
-    fun_frame_Label = Label(fun_frame_Labelframe,text="爬取时间间隔设置: 秒").grid(row=0,column=0,sticky=E+W)
-    fun_frame_Spinbox = Spinbox(fun_frame_Labelframe,from_=1,to=100,increment=1,textvariable=time_scale_var,command=get_time_scale_var).grid(row=1,column=0,sticky=E+W)
-    fun_frame_Button_spider = Button(fun_frame_Labelframe,text="开始爬取数据",command=MyThread_spider,pady=10).grid(row=2,column=0,sticky=E+W)        
-    fun_frame_Button_clean = Button(fun_frame_Labelframe,text="初步数据整理",command=clean).grid(row=3,column=0,sticky=E+W)
-    fun_frame_Button_clean_deep = Button(fun_frame_Labelframe,text="深度数据整理",command=clean_deep).grid(row=4,column=0,sticky=E+W)
-    fun_frame_Button_pdf_download = Button(fun_frame_Labelframe,text="pdf下载和整理",command=MyThread_pdf,pady=10).grid(row=5,column=0,sticky=E+W)
-    fun_frame_Button_png2excel = Button(fun_frame_Labelframe,text="插入图片到excel",command=png2excel,pady=10).grid(row=6,column=0,sticky=E+W)
-    pil_image = Image.new('RGB', (500, 500), (255,255,255))
-    tk_image = ImageTk.PhotoImage(pil_image)
-
-    fun_frame_Button_vip = Button(fun_frame_Labelframe,text="一键爬取清洗下载保存导出",command=vip,pady=15).grid(row=7,column=0,columnspan=2,sticky=E+W)
-    fun_frame_Labelframe.grid()
-
-    # 爬取数据之后
-    check_1 = False
-    check_2 = False
-
-    def _check():
-        global check_1,check_2
-        global df_rest,df_all,df_hit
-        if check_2 == False:
-            if os.path.exists("已处理"):
-                if os.path.isfile("已处理/全部数据.xlsx") and os.path.isfile("已处理/未命中数据.xlsx") and os.path.isfile("已处理/命中数据.xlsx"):
-                    check_1 = True
-                    # showinfo("[ tip ] check_1 = True")
-            if check_1:
-                df_all = pd.read_excel("已处理/全部数据.xlsx")
-                df_rest = pd.read_excel("已处理/未命中数据.xlsx")
-                df_hit = pd.read_excel("已处理/命中数据.xlsx")
-                # df_hit = pd.merge(df_hit,df_all)
-                if len(df_all) != 0:
-                    df_all = df_all.reindex(df_all['标题'].str.len().sort_values(ascending=True).index)
-                if len(df_rest) != 0:
-                    df_rest = df_rest.reindex(df_rest['标题'].str.len().sort_values(ascending=True).index)
-                if len(df_hit) != 0:
-                    df_hit = df_hit.reindex(df_hit['标题'].str.len().sort_values(ascending=True).index)
-                df_all["是否下载"]=""
-                df_hit["是否下载"]=""
-                df_rest["是否下载"]=""
-                if not os.path.exists("tmp/png_get/"):
-                    pass
-                else:
-                    for i in os.listdir("tmp/png_get/"):
-                        ii = i.split(".")[0]
-                        df_all.loc[df_all["专利号"]==ii,"是否下载"]=os.path.join("tmp/png_get/",i)
-                        if '专利号' in list(df_hit.columns):  
-                            df_hit.loc[df_hit["专利号"]==ii,"是否下载"]=os.path.join("tmp/png_get/",i)
-                        df_rest.loc[df_rest["专利号"]==ii,"是否下载"]=os.path.join("tmp/png_get/",i)
-                if not os.path.exists("png_get/"):
-                    pass
-                else:
-                    for i in os.listdir("png_get/"):
-                        ii = i.split(".")[0]
-                        df_all.loc[df_all["专利号"]==ii,"是否下载"]=os.path.join("png_get/",i)
-                        if '专利号' in list(df_hit.columns): 
-                            df_hit.loc[df_hit["专利号"]==ii,"是否下载"]=os.path.join("png_get/",i)
-                        df_rest.loc[df_rest["专利号"]==ii,"是否下载"]=os.path.join("png_get/",i)
-                check_1 = False
-                check_2 = True
-                # showinfo("[ tip ] check_1 = False")
-                showinfo("[ tip ] check = True")
-                show_df_all()
-
-    label_img = Label(png_frame,image=tk_image)
-    label_img.pack(expand=True,anchor="center",fill="both")
-
-
-    key_frame.place(x=0,y=0)
-    sea_frame.place(x=425,y=0)
-    bad_frame.place(x=650,y=0)
-    hit_frame.place(x=875,y=0)
-    fun_frame.place(x=0,y=250)
-    sho_frame.place(x=200,y=400)
-    out_frame.place(x=200,y=250)
-    png_frame.place(x=800,y=250)
-
     def on_closing():
         ans = messagebox.askokcancel("退出", "是否自动保存记录?")
         if ans:
@@ -1284,6 +1050,161 @@ if __name__ == "__main__":
             if len(done_words)!= 0:
                 pd.DataFrame(done_words).to_csv("缓存/done.csv",header=FALSE,index=None)
             root.destroy()
+
+    root = Tk()
+    root.geometry('1100x650')
+    root.title("专利查询和搜索")
+
+    key_frame = Frame(width=425,height=250,bg="LightPink")
+    sea_frame = Frame(width=225,height=250,bg="Yellow")
+    bad_frame = Frame(width=225,height=250,bg="Thistle")
+    hit_frame = Frame(width=225,height=250,bg="AntiqueWhite")
+    fun_frame = Frame(width=200,height=400,bg="LightSeaGreen")
+    out_frame = Frame(width=600,height=150,bg="green")
+    png_frame = Frame(width=300,height=400)
+    sho_frame = Frame(width=600,height=250)
+    df_all = pd.DataFrame()
+    df_rest = pd.DataFrame()
+    df_hit = pd.DataFrame()
+    time_sacle = "5"
+    failurls = []
+    w_box = 400   
+    h_box = 400
+    headers = {"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.122 Safari/537.36"}
+    SURL = "http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO2&Sect2=HITOFF&p=page_change&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=0&f=S&l=50&TERM1=search_change&FIELD1=&co1=AND&TERM2=&FIELD2=&d=PTXT"
+    SURL_2 = "http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO2&Sect2=HITOFF&p=page_change&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=0&f=S&l=50&TERM1=search_change&FIELD1=&co1=AND&TERM2=term2_change&FIELD2=&d=PTXT"
+    check_1 = False
+    check_2 = False
+    key_words = []
+    bad_words = []
+    hit_words = []
+    sea_words = []
+    done_words = []
+    if os.path.exists("缓存"):
+        if os.path.isfile("缓存/排除词缓存.csv"):
+            bad_words = list(pd.read_csv("缓存/排除词缓存.csv",header=None)[0])
+            showinfo("[ ok ]---导入排除词成功")
+        if os.path.exists("缓存/新增命中词缓存.csv"):
+            hit_words = list(pd.read_csv("缓存/新增命中词缓存.csv",header=None)[0])
+            showinfo("[ ok ]---导入新增命中词成功")
+        if os.path.exists("缓存/搜索记录缓存.csv"):
+            sea_words = list(pd.read_csv("缓存/搜索记录缓存.csv",header=None)[0])
+            showinfo("[ ok ]---导入搜索记录成功")
+        if os.path.exists("缓存/关键词缓存.csv"):
+            key_words = list(pd.read_csv("缓存/关键词缓存.csv",header=None)[0])
+            showinfo("[ ok ]---导入关键词成功")
+        if os.path.exists("缓存/done.csv"):
+            done_words = list(pd.read_csv("缓存/done.csv",header=None)[0])
+            showinfo("[ ok ]---导入done成功")
+    out_frame_Labelframe = LabelFrame(out_frame,width=500,height=300,text="输出信息",padx=10,pady=10)
+    out_frame_Text = Text(out_frame_Labelframe,width=80,height=7)
+    out_frame_Text.grid()
+    out_frame_Labelframe.grid()
+    hit_word_Var = StringVar()
+    hit_word_Var.set("新增命中词")
+    hit_word_Entry = Entry(hit_frame,textvariable=hit_word_Var)
+    hit_word_Entry.bind("<Return>", hit_word_Entry_bind)
+    hit_word_Entry.grid(row=0,column=0)
+    hit_word_Button = Button(hit_frame,text="添加",command=lambda :hit_word_Fun(hit_word_Var.get())).grid(row=0,column=1)
+    hit_word_save_Button = Button(hit_frame,text="保存",command=hit_word_save).grid(row=2,column=1)
+    hit_word_Listbox = Listbox(hit_frame,height=10,width=32)
+    for hit_word in hit_words:
+        hit_word_Listbox.insert(END,hit_word)
+    hit_word_Listbox.grid(row=1,columnspan=2)
+    hit_word_Listbox_Button = Button(hit_frame,text="删除命中词",command=lambda:hit_word_Listbox_delete(ACTIVE)).grid(row=2,columnspan=2)
+    key_word_Var = StringVar()
+    key_word_term2_Var = StringVar()
+    key_word_Var.set("填写关键词")
+    key_word_term2_Var.set("TERM2")
+    key_word_Entry = Entry(key_frame,textvariable=key_word_Var)
+    key_word_term2 = Entry(key_frame,textvariable=key_word_term2_Var)
+    key_word_Entry.bind("<Return>", key_word_Entry_bind)
+    key_word_term2.bind("<Return>", key_word_Entry_bind)
+    key_word_Entry.grid(row=0,column=0)
+    key_word_term2.grid(row=0,column=1)
+    key_word_Button = Button(key_frame,text="添加",command=lambda :key_word_Fun(key_word_Var.get(),key_word_term2_Var.get())).grid(row=0,column=2)
+    key_word_save_Button = Button(key_frame,text="保存",command=key_word_save).grid(row=2,column=1)
+    key_word_Listbox = Listbox(key_frame,height=10,width=60)
+    for key_word in key_words:
+        key_word_Listbox.insert(END,key_word)
+    key_word_Listbox.grid(row=1,columnspan=3)
+    key_word_Listbox_Button = Button(key_frame,text="删除关键词",command=lambda:key_word_Listbox_delete(ACTIVE)).grid(row=2,columnspan=2)
+    sea_word_Var = StringVar()
+    sea_word_Var.set("search_something")
+    sea_word_Entry = Entry(sea_frame,textvariable=sea_word_Var)
+    sea_word_Entry.bind("<Return>", sea_word_Entry_bind)
+    sea_word_Entry.grid(row=0,column=0)
+    tmp = Frame(sho_frame)
+    scrollbar = Scrollbar(tmp)
+    tree = Treeview(tmp,column=('c1', 'c2','c3'),show="headings",yscrollcommand=scrollbar.set,height=8)
+    tree.column('c1', width=250, anchor='center')
+    tree.column('c2', width=230, anchor='center')
+    tree.column('c3', width=100, anchor='center')
+    tree.heading('c1', text='标题')
+    tree.heading('c2', text='pdf下载链接')
+    tree.heading('c3', text='本地是否下载')
+    tree.pack(side=LEFT, fill=Y)
+    scrollbar.pack(side=RIGHT,fill=Y)
+    scrollbar.config(command=tree.yview)
+    tree.bind('<Button-1>', treeviewClick)
+    tree.bind("<Button-3>",treeviewRightClick)
+    tmp.grid(row=1,column=0,columnspan=5)
+    down_flag = ""
+    df_all_button = Button(sho_frame,text="显示所有数据",command=show_df_all).grid(row=0,column=0)
+    df_rest_button = Button(sho_frame,text="显示未命中数据",command=show_df_rest).grid(row=0,column=1)
+    df_hit_button = Button(sho_frame,text="显示命中数据",command=show_df_hit).grid(row=0,column=2)
+    download_search_Button = Button(sho_frame,text="下载图片",command=MyThread_download_search).grid(row=0,column=4)
+    show_wenjianjia_Button = Button(sho_frame,text="打开文件夹",command=wenjiajia).grid(row=0,column=3)
+    search_all_button = Button(sho_frame,text="所有数据中",command=show_search_all)
+    search_rest_button = Button(sho_frame,text="未命中数据中",command=show_search_rest)
+    search_hit_button = Button(sho_frame,text="命中数据中",command=show_search_hit)
+    search_all_button.grid_forget()
+    search_rest_button.grid_forget()
+    search_hit_button.grid_forget()
+    sea_word_Button = Button(sea_frame,text="添加",command=lambda:sea_word_Fun(sea_word_Var.get())).grid(row=0,column=1)
+    sea_word_save_Button = Button(sea_frame,text="保存",command=sea_word_save).grid(row=2,column=1)
+    sea_word_Listbox = Listbox(sea_frame,height=10,width=32)
+    for sea_word in sea_words:
+        sea_word_Listbox.insert(END,sea_word)
+    sea_word_Listbox.grid(row=1,columnspan=2)
+    sea_word_Listbox_Button = Button(sea_frame,text="删除搜索记录",command=lambda:sea_word_Listbox_delete(ACTIVE)).grid(row=2,columnspan=2)
+    sea_word_Listbox.bind("<Double-1>",sea_word_Listbox_double)
+    bad_word_Var = StringVar()
+    bad_word_Var.set("填写排除词")
+    bad_word_Entry = Entry(bad_frame,textvariable=bad_word_Var)
+    bad_word_Entry.bind("<Return>", bad_word_Entry_bind)
+    bad_word_Entry.grid(row=0,column=0)     
+    bad_word_Button = Button(bad_frame,text="添加",command=lambda:bad_word_Fun(bad_word_Var.get())).grid(row=0,column=1)
+    bad_word_Listbox = Listbox(bad_frame,height=10,width=32)
+    for bad_word in bad_words:
+        bad_word_Listbox.insert(END,bad_word)
+    bad_word_Listbox.grid(row=1,column=0,columnspan=2)
+    bad_word_Listbox_Button = Button(bad_frame,text="删除排除词",command=lambda:bad_word_Listbox_delete(ACTIVE)).grid(row=2,column=0)
+    bad_word_save_Button = Button(bad_frame,text="保存",command=bad_word_save).grid(row=2,column=1)
+    time_scale_var = StringVar()
+    time_scale_var.set("5")
+    fun_frame_Labelframe = LabelFrame(fun_frame,width=200,height=400,text="功能区",padx=10,pady=10)
+    fun_frame_Label = Label(fun_frame_Labelframe,text="爬取时间间隔设置: 秒").grid(row=0,column=0,sticky=E+W)
+    fun_frame_Spinbox = Spinbox(fun_frame_Labelframe,from_=1,to=100,increment=1,textvariable=time_scale_var,command=get_time_scale_var).grid(row=1,column=0,sticky=E+W)
+    fun_frame_Button_spider = Button(fun_frame_Labelframe,text="开始爬取数据",command=MyThread_spider,pady=10).grid(row=2,column=0,sticky=E+W)        
+    fun_frame_Button_clean = Button(fun_frame_Labelframe,text="初步数据整理",command=clean).grid(row=3,column=0,sticky=E+W)
+    fun_frame_Button_clean_deep = Button(fun_frame_Labelframe,text="深度数据整理",command=clean_deep).grid(row=4,column=0,sticky=E+W)
+    fun_frame_Button_pdf_download = Button(fun_frame_Labelframe,text="pdf下载和整理",command=MyThread_pdf,pady=10).grid(row=5,column=0,sticky=E+W)
+    fun_frame_Button_png2excel = Button(fun_frame_Labelframe,text="插入图片到excel",command=png2excel,pady=10).grid(row=6,column=0,sticky=E+W)
+    pil_image = Image.new('RGB', (500, 500), (255,255,255))
+    tk_image = ImageTk.PhotoImage(pil_image)
+    fun_frame_Button_vip = Button(fun_frame_Labelframe,text="一键爬取清洗下载保存导出",command=vip,pady=15).grid(row=7,column=0,columnspan=2,sticky=E+W)
+    fun_frame_Labelframe.grid()
+    label_img = Label(png_frame,image=tk_image)
+    label_img.pack(expand=True,anchor="center",fill="both")
+    key_frame.place(x=0,y=0)
+    sea_frame.place(x=425,y=0)
+    bad_frame.place(x=650,y=0)
+    hit_frame.place(x=875,y=0)
+    fun_frame.place(x=0,y=250)
+    sho_frame.place(x=200,y=400)
+    out_frame.place(x=200,y=250)
+    png_frame.place(x=800,y=250)
     root.after(1000,_check)
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()

@@ -1,0 +1,18 @@
+def __init__(self, ipList, user, password):
+    self.ipList = ipList
+    self.httpAuth = HTTPDigestAuth(user, password)
+    return
+
+def out(self, i):
+    url = "http://" + i + "/name"
+    response = requests.get(url, self.httpAuth)
+    print(response.text)
+    return
+
+def test(self):
+    pool = Pool(processes=2)
+    for i in self.ipList:
+        pool.apply(self.out, args=(i,))
+    pool.close()
+    pool.join()
+    return
