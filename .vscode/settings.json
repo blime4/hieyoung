@@ -1,4 +1,4 @@
 {
-    "python.pythonPath": "D:\\app\\anaconda\\envs\\scr37\\python.exe",
+    "python.pythonPath": "D:\\app\\anaconda\\envs\\py37\\python.exe",
     "python.linting.pylintArgs": [ "--disable=C,R,W","--disable=assignment-from-no-return","--disable=abstract-class-instantiated","--disable=no-member"]
 }
