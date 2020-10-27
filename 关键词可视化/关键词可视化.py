@@ -5,10 +5,6 @@ from tkinter.filedialog import askdirectory
 import pandas as pd
 import os
 import re
-# from nltk.tokenize import RegexpTokenizer
-# from nltk.corpus import stopwords
-# from nltk.tokenize import word_tokenize
-# from nltk.util import ngrams 
 import emoji
 from itertools import chain
 import threading

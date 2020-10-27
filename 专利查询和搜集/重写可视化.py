@@ -7,7 +7,6 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from contextlib import closing
 import threading
-# from pdf2image import convert_from_path
 from PIL import Image, ImageEnhance,ImageTk
 from tkinter.ttk import Treeview
 import xlsxwriter
@@ -1191,7 +1190,7 @@ if __name__ == "__main__":
     fun_frame_Label = Label(fun_frame_Labelframe,text="爬取时间间隔设置: 秒").grid(row=0,column=0,sticky=E+W)
     fun_frame_Spinbox = Spinbox(fun_frame_Labelframe,from_=1,to=100,increment=1,textvariable=time_scale_var,command=get_time_scale_var).grid(row=1,column=0,sticky=E+W)
     fun_frame_Button_spider = Button(fun_frame_Labelframe,text="开始爬取数据",command=MyThread_spider,pady=10).grid(row=2,column=0,sticky=E+W)        
-    fun_frame_Button_clean = Button(fun_frame_Labelframe,text="初步数据整理",command=clean).grid(row=3,column=0,sticky=E+W)
+    # fun_frame_Button_clean = Button(fun_frame_Labelframe,text="初步数据整理",command=clean).grid(row=3,column=0,sticky=E+W)
     fun_frame_Button_clean_deep = Button(fun_frame_Labelframe,text="深度数据整理",command=clean_deep).grid(row=4,column=0,sticky=E+W)
     fun_frame_Button_pdf_download = Button(fun_frame_Labelframe,text="pdf下载和整理",command=MyThread_pdf,pady=10).grid(row=5,column=0,sticky=E+W)
     fun_frame_Button_png2excel = Button(fun_frame_Labelframe,text="插入图片到excel",command=png2excel,pady=10).grid(row=6,column=0,sticky=E+W)
