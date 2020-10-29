@@ -107,11 +107,14 @@ def spider(urls):
                     print("已经登陆")
                     # browser.find_element_by_xpath('//*[@id="ext-main-box"]/header/div/div/div').click()
                 # //*[@id="content-ext-main"]/div/footer/div[1]/button[3]/div[2]
-                browser.find_element_by_xpath('//*[@id="content-ext-main"]/div/footer/div[1]/button[3]/div[1]').click()
-                time.sleep(0.1)
+                try:
+                    browser.find_element_by_xpath('//*[@id="content-ext-main"]/div/footer/div[1]/button[3]/div[1]').click()
+                    time.sleep(0.1)
                 # WebDriverWait(browser,20,0.5).until(EC.presence_of_element_located((By.XPATH,'//div[@style="transform: translateX(-200%);"]')))
                 # print(url+"下载完成")
-                time.sleep(5)
+                    time.sleep(5)
+                except:
+                    print('savefail\t%s' % url)
             j += 1
             if j % 10 == 0:
                 time.sleep(10)

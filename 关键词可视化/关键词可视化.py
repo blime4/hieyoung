@@ -9,144 +9,15 @@ import emoji
 from itertools import chain
 import threading
 import time
-from bt import BaiduTrans
+from fanyi import *
 paths = ""
+import pandas as pd
 
-stopwords_list = ['i',
- 'me',
- 'my',
- 'myself',
- 'we',
- 'our',
- 'ours',
- 'ourselves',
- 'you',
- "you're",
- "you've",
- "you'll",
- "you'd",
- 'your',
- 'yours',
- 'yourself',
- 'yourselves',
- 'he',
- 'him',
- 'his',
- 'himself',
- 'she',
- "she's",
- 'her',
- 'hers',
- 'herself',
- 'it',
- "it's",
- 'its',
- 'itself',
- 'they',
- 'them',
- 'their',
- 'theirs',
- 'themselves',
- 'what',
- 'which',
- 'who',
- 'whom',
- 'this',
- 'that',
- "that'll",
- 'these',
- 'those',
- 'am',
- 'is',
- 'are',
- 'was',
- 'were',
- 'be',
- 'been',
- 'being',
- 'have',
- 'has',
- 'had',
- 'having',
- 'do',
- 'does',
- 'did',
- 'doing',
- 'a',
- 'an',
- 'the',
- 'and',
- 'but',
- 'if',
- 'or',
- 'because',
- 'as',
- 'until',
- 'while',
- 'of',
- 'at',
- 'by',
- 'for',
- 'with',
- 'about',
- 'against',
- 'between',
- 'into',
- 'through',
- 'during',
- 'before',
- 'after',
- 'above',
- 'below',
- 'to',
- 'from',
- 'up',
- 'down',
- 'in',
- 'out',
- 'on',
- 'off',
- 'over',
- 'under',
- 'again',
- 'further',
- 'then',
- 'once',
- 'here',
- 'there',
- 'when',
- 'where',
- 'why',
- 'how',
- 'all',
- 'any',
- 'both',
- 'each',
- 'few',
- 'more',
- 'most',
- 'other',
- 'some',
- 'such',
- 'no',
- 'nor',
- 'not',
- 'only',
- 'own',
- 'same',
- 'so',
- 'than',
- 'too',
- 'very',
- 's',
- 't',
- 'can',
- 'will',
- 'just',
- 'don',
- "don't",
- 'should',
- "should've",'now','d','ll','m','o','re','ve','y','ain','aren',"aren't",'couldn',"couldn't",'didn',"didn't",'doesn',"doesn't",'hadn',"hadn't",'hasn',"hasn't",'haven',"haven't",'isn',"isn't",'ma','mightn',"mightn't",'mustn',"mustn't",'needn',"needn't",'shan',"shan't",'shouldn',"shouldn't",'wasn',"wasn't",'weren',"weren't",'won',"won't",'wouldn',"wouldn't"]
+
+
+
+stopwords_list = []
+
 
 def pad_sequence(sequence,n):
     sequence = iter(sequence)
@@ -167,12 +38,20 @@ def ngrams(sequence,n):
         yield tuple(history)
         del history[0]
 def select_dir():
-    global paths
+    global paths,stopwords_list
     dir_ = askdirectory()
     paths = dir_
     if dir_ !="":
         print(dir_)
         messagebox.showinfo('已选择',dir_)
+        if not os.path.exists(dir_+'/缓存'): 
+            os.mkdir(dir_+'/缓存')
+        if os.path.isfile(dir_+'/缓存/停用词.csv'):
+            stopwords_list = list(pd.read_csv(paths+"/缓存/停用词.csv",header=None)[0])
+        else:
+            stopwords_list = ['i','me','my','myself','we','our','ours','ourselves','you',"you're","you've","you'll","you'd",'your','yours','yourself','yourselves','he','him','his','himself','she',"she's",'her','hers','herself','it',"it's",'its','itself','they','them','their','theirs','themselves','what','which','who','whom','this','that',"that'll",'these','those','am','is','are','was','were','be','been','being','have','has','had','having','do','does','did','doing','a','an','the','and','but','if','or','because''as','until','while','of','at','by','for','with','about','against','between','into','through','during','before','after','above','below','to','from','up','down','in','out','on','off','over','under','again','further','then','once','here','there','when','where','why','how','all','any','both','each','few','more','most','other','some','such','no','nor','not','only','own','same','so','than','too','very','s','t','can','will','just','don',"don't",'should',"should've",'now','d','ll','m','o','re','ve','y','ain','aren',"aren't",'couldn',"couldn't",'didn',"didn't",'doesn',"doesn't",'hadn',"hadn't",'hasn',"hasn't",'haven',"haven't",'isn',"isn't",'ma','mightn',"mightn't",'mustn',"mustn't",'needn',"needn't",'shan',"shan't",'shouldn',"shouldn't",'wasn',"wasn't",'weren',"weren't",'won',"won't",'wouldn',"wouldn't"]
+            pd.DataFrame(stopwords_list).to_csv(dir_+'/缓存/停用词.csv',index=None,header=False)
+
 
 
 def output_excel():
@@ -376,7 +255,7 @@ def output_excel():
             df = pd.read_excel(path)
             df = df[["标题","内容","星级"]]
             if CheckVar2:
-                df["内容翻译"] = df["内容"].apply(lambda x:BaiduTrans().get(x))
+                df["内容翻译"] = df["内容"].apply(lambda x:fy().get(x))
             df_all = pd.concat([df_all,df])
             n += raise_data
             canvas.coords(fill_line,(0,0,n,60))
@@ -388,10 +267,22 @@ def output_excel():
 
 def open_dir():
     os.system("start "+paths+"/处理结果")
+
+
+
 root = Tk()
 root.geometry('200x200')
 root.title("关键词")
 CheckVar2 = IntVar()
+
+
+
+def reset_stop():
+    os.startfile(paths+"/缓存/停用词.csv")
+    ans = messagebox.askokcancel("修改好了？", "是否立刻刷新使用？")
+    if ans:
+        global stopwords_list
+        stopwords_list = list(pd.read_csv(paths+"/缓存/停用词.csv",header=None)[0])
 
 
 class MyThread(threading.Thread):
@@ -412,7 +303,8 @@ def show_hide_canvas(str):
         canvas.pack()
 canvas.pack_forget()
 
-C1 = Checkbutton(root, text = "翻译评论", variable = CheckVar2, onvalue = 1, offvalue = 0, width = 20).pack()
+C1 = Checkbutton(root, text = "翻译评论(需要点时间，慎点)", variable = CheckVar2, onvalue = 1, offvalue = 0, width = 20).pack()
+stop_button = Button(root, text = "重新设置停用词",command=lambda:MyThread(reset_stop,),width ="20").pack()
 open_dir_button = Button(root,text="打开所在文件夹",command=lambda :MyThread(open_dir,),width="20").pack()
 root.mainloop()
 

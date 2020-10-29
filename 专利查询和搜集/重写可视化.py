@@ -22,6 +22,7 @@ import webbrowser
 import aiomultiprocess
 import multiprocessing
 
+
 class MyThread(threading.Thread):
     def __init__(self,func,*args):
         super().__init__()
@@ -32,7 +33,7 @@ class MyThread(threading.Thread):
     def run(self):
         self.func(*self.args)
 if __name__ == "__main__":
-        
+
     def showinfo(result):
         realtime = time.strftime("%H:%M:%S ")
         textvar = realtime + result #系统时间和传入结果
@@ -41,8 +42,37 @@ if __name__ == "__main__":
         out_frame_Text.update()
         out_frame_Text.see(END)
 
-
-
+    def RightClickTip(click):
+        if click == "关键词查询":
+            showinfo("[ tip ]---TERM1：关键词1，TERM2：关键词2。可以只填关键词1，也可以填写两个做品牌关键词查询。")
+        if click == "搜索关键词":
+            showinfo("[ tip ]---搜索关键词，多级查询添加“ + ”即可。例如：pot+plant+hanger")
+        if click == "排除无关词":
+            showinfo("[ tip ]---排除“ 命中数据 ”中和本次调研无关的词。")
+        if click == "新增命中词":
+            showinfo("[ tip ]---添加与本次调研有关的词")
+        if click == "爬取时间间隔":
+            showinfo("[ tip ]---防止被反扒被封，设置的爬取间隔时间")
+        if click == "开始爬取":
+            showinfo("[ tip ]---开始爬取 关键词列表中所有关键词 并且会自动进行数据清洗。")
+        if click == "深度数据整理":
+            showinfo("[ tip ]---根据 “排除词”，“命中词”，“关键词“进行数据整理，生成命中数据.xlsx,未命中数据.xlsx")
+        if click == "PDF下载和整理":
+            showinfo("[ tip ]---下载命中数据.xlsx中所有的pdf，并且转换成PNG，得到需要的专利图片和授权时间")
+        if click == "插入图片到excel":
+            showinfo("[ tip ]---将下载好的图片插入到excel中，得到最终需要的xlsx")
+        if click == "一键爬取清洗下载保存导出":
+            showinfo("[ tip ]---一键完成 ”开始爬取“，”深度数据整理“，”PDF下载和整理“，”插入图片到excel“")
+        if click == "显示所有数据":
+            showinfo("[ tip ]---显示全部数据.xlsx")
+        if click == "显示未命中数据":
+            showinfo("[ tip ]---显示未命中数据.xlsx")
+        if click == "显示命中数据":
+            showinfo("[ tip ]---显示命中数据.xlsx")
+        if click == "打开文件夹":
+            showinfo("[ tip ]---打开工具所在文件夹，如果处理了数据，即会打开”已处理“文件夹")
+        if click == "下载图片":
+            showinfo("[ tip ]---下载表格中所有图片到缓存中。例如，点击了显示命中数据，再点下载图片，就是下载命中数据的图片。如果是显示点了”搜索一下“，再点下载图片，就是下载搜索命中的图片。")
     root = Tk()
     root.geometry('1100x650')
     root.title("专利查询和搜索")
@@ -122,8 +152,15 @@ if __name__ == "__main__":
                     hit_word_Listbox.insert(END,hit_word)
                 hit_word_Listbox.see(END)
                 fast_clean_deep(str(hit_word_var_))
+            hit_word_Var.set("新增命中词")
                     
-    hit_word_Button = Button(hit_frame,text="添加",command=lambda :hit_word_Fun(hit_word_Var.get())).grid(row=0,column=1)
+    hit_word_Button = Button(hit_frame,text="添加",command=lambda :hit_word_Fun(hit_word_Var.get()))
+
+    hit_word_Button.grid(row=0,column=1)
+    def tip1(event):
+        RightClickTip("新增命中词")
+    hit_word_Button.bind("<Button-3>",tip1)
+
     def hit_word_save():
         if not os.path.exists("缓存"):
             os.mkdir("缓存")
@@ -162,7 +199,7 @@ if __name__ == "__main__":
     hit_word_Listbox_Button = Button(hit_frame,text="删除命中词",command=lambda:hit_word_Listbox_delete(ACTIVE)).grid(row=2,columnspan=2)
     key_word_Var = StringVar()
     key_word_term2_Var = StringVar()
-    key_word_Var.set("填写关键词")
+    key_word_Var.set("TERM1")
     key_word_term2_Var.set("TERM2")
     key_word_Entry = Entry(key_frame,textvariable=key_word_Var)
     key_word_term2 = Entry(key_frame,textvariable=key_word_term2_Var)
@@ -176,7 +213,7 @@ if __name__ == "__main__":
         global key_words
         if key_word_var_ == "":
             pass
-        elif key_word_var_ == "填写关键词":
+        elif key_word_var_ == "TERM1":
             pass
         else:
             if key_word_term2_var_ == "TERM2" or key_word_term2_var_ == "":
@@ -199,8 +236,13 @@ if __name__ == "__main__":
                     for key_word in key_words:
                         key_word_Listbox.insert(END,key_word)
                     key_word_Listbox.see(END)
-                    
-    key_word_Button = Button(key_frame,text="添加",command=lambda :key_word_Fun(key_word_Var.get(),key_word_term2_Var.get())).grid(row=0,column=2)
+            key_word_term2_Var.set("TERM2")
+            key_word_Var.set("TERM1")
+    def tip2(event):
+        RightClickTip("关键词查询")
+    key_word_Button = Button(key_frame,text="添加关键词",command=lambda :key_word_Fun(key_word_Var.get(),key_word_term2_Var.get()))
+    key_word_Button.grid(row=0,column=2)
+    key_word_Button.bind("<Button-3>",tip2)
     def key_word_save():
         if not os.path.exists("缓存"):
             os.mkdir("缓存")
@@ -227,7 +269,7 @@ if __name__ == "__main__":
 
 
     sea_word_Var = StringVar()
-    sea_word_Var.set("search_something")
+    sea_word_Var.set("搜索一下")
     sea_word_Entry = Entry(sea_frame,textvariable=sea_word_Var)
     def sea_word_Entry_bind(event):
         sea_word_Fun(sea_word_Var.get())
@@ -390,12 +432,31 @@ if __name__ == "__main__":
             os.startfile(os.path.join(os.getcwd(),"已处理"))
         except:
             os.startfile(os.getcwd())
-
-    df_all_button = Button(sho_frame,text="显示所有数据",command=show_df_all).grid(row=0,column=0)
-    df_rest_button = Button(sho_frame,text="显示未命中数据",command=show_df_rest).grid(row=0,column=1)
-    df_hit_button = Button(sho_frame,text="显示命中数据",command=show_df_hit).grid(row=0,column=2)
-    download_search_Button = Button(sho_frame,text="下载图片",command=MyThread_download_search).grid(row=0,column=4)
-    show_wenjianjia_Button = Button(sho_frame,text="打开文件夹",command=wenjiajia).grid(row=0,column=3)
+    def tip11(event):
+        RightClickTip("显示所有数据")
+    def tip12(event):
+        RightClickTip("显示未命中数据")
+    def tip13(event):
+        RightClickTip("显示命中数据")
+    def tip14(event):
+        RightClickTip("打开文件夹")
+    def tip15(event):
+        RightClickTip("下载图片")
+    df_all_button = Button(sho_frame,text="显示所有数据",command=show_df_all)
+    df_all_button.grid(row=0,column=0)
+    df_all_button.bind("<Button-3>",tip11)
+    df_rest_button = Button(sho_frame,text="显示未命中数据",command=show_df_rest)
+    df_rest_button.grid(row=0,column=1)
+    df_rest_button.bind("<Button-3>",tip12)
+    df_hit_button = Button(sho_frame,text="显示命中数据",command=show_df_hit)
+    df_hit_button.grid(row=0,column=2)
+    df_hit_button.bind("<Button-3>",tip13)
+    show_wenjianjia_Button = Button(sho_frame,text="打开文件夹",command=wenjiajia)
+    show_wenjianjia_Button.grid(row=0,column=3)
+    show_wenjianjia_Button.bind("<Button-3>",tip14)
+    download_search_Button = Button(sho_frame,text="下载图片",command=MyThread_download_search)
+    download_search_Button.grid(row=0,column=4)
+    download_search_Button.bind("<Button-3>",tip15)
     search_all_button = Button(sho_frame,text="所有数据中",command=show_search_all)
     search_rest_button = Button(sho_frame,text="未命中数据中",command=show_search_rest)
     search_hit_button = Button(sho_frame,text="命中数据中",command=show_search_hit)
@@ -416,7 +477,7 @@ if __name__ == "__main__":
         global sea_words
         if sea_word_var_ == "":
             pass
-        elif sea_word_var_ == "search_something":
+        elif sea_word_var_ == "搜索一下":
             pass
         else:
             showinfo("[ ok ]---搜索 "+str(sea_word_var_)+" 中")
@@ -438,8 +499,12 @@ if __name__ == "__main__":
                 for sea_word in sea_words:
                     sea_word_Listbox.insert(END,sea_word)
                 sea_word_Listbox.see(END)
-                    
-    sea_word_Button = Button(sea_frame,text="添加",command=lambda:sea_word_Fun(sea_word_Var.get())).grid(row=0,column=1)
+            sea_word_Var.set("搜索一下")
+    def tip3(event):
+        RightClickTip("搜索关键词")                
+    sea_word_Button = Button(sea_frame,text="添加",command=lambda:sea_word_Fun(sea_word_Var.get()))
+    sea_word_Button.grid(row=0,column=1)
+    sea_word_Button.bind("<Button-3>",tip3)
     def sea_word_save():
         if not os.path.exists("缓存"):
             os.mkdir("缓存")
@@ -469,7 +534,7 @@ if __name__ == "__main__":
 
 
     bad_word_Var = StringVar()
-    bad_word_Var.set("填写排除词")
+    bad_word_Var.set("排除无关词")
     bad_word_Entry = Entry(bad_frame,textvariable=bad_word_Var)
     def bad_word_Entry_bind(event):
         bad_word_Fun(bad_word_Var.get())
@@ -479,7 +544,7 @@ if __name__ == "__main__":
         global bad_words,hit_words
         if bad_word_var_ == "":
             pass
-        elif bad_word_var_ == "填写排除词":
+        elif bad_word_var_ == "排除无关词":
             pass
         else:
             if bad_word_var_ in bad_words:
@@ -493,8 +558,13 @@ if __name__ == "__main__":
                     bad_word_Listbox.insert(END,bad_word)
                 bad_word_Listbox.see(END)
                 clean_deep()
+            bad_word_Var.set("排除无关词")
                     
-    bad_word_Button = Button(bad_frame,text="添加",command=lambda:bad_word_Fun(bad_word_Var.get())).grid(row=0,column=1)
+    def tip4(event):
+        RightClickTip("排除无关词")
+    bad_word_Button = Button(bad_frame,text="添加",command=lambda:bad_word_Fun(bad_word_Var.get()))
+    bad_word_Button.grid(row=0,column=1)
+    bad_word_Button.bind("<Button-3>",tip4)
     bad_word_Listbox = Listbox(bad_frame,height=10,width=32)
     for bad_word in bad_words:
         bad_word_Listbox.insert(END,bad_word)
@@ -1185,19 +1255,44 @@ if __name__ == "__main__":
         global time_sacle
         time_sacle = str(time_scale_var.get())
 
-
+    def tip5(event):
+        RightClickTip("爬取时间间隔")
+    def tip6(event):
+        RightClickTip("开始爬取")
+    def tip7(event):
+        RightClickTip("深度数据整理")
+    def tip8(event):
+        RightClickTip("PDF下载和整理")
+    def tip9(event):
+        RightClickTip("插入图片到excel")
+    def tip10(event):
+        RightClickTip("一键爬取清洗下载保存导出")
+    def open_tip():
+        webbrowser.open("")
     fun_frame_Labelframe = LabelFrame(fun_frame,width=200,height=400,text="功能区",padx=10,pady=10)
-    fun_frame_Label = Label(fun_frame_Labelframe,text="爬取时间间隔设置: 秒").grid(row=0,column=0,sticky=E+W)
+    fun_frame_Label = Label(fun_frame_Labelframe,text="爬取时间间隔设置: 秒")
+    fun_frame_Label.grid(row=0,column=0,sticky=E+W)
+    fun_frame_Label.bind("<Button-3>",tip5)
     fun_frame_Spinbox = Spinbox(fun_frame_Labelframe,from_=1,to=100,increment=1,textvariable=time_scale_var,command=get_time_scale_var).grid(row=1,column=0,sticky=E+W)
-    fun_frame_Button_spider = Button(fun_frame_Labelframe,text="开始爬取数据",command=MyThread_spider,pady=10).grid(row=2,column=0,sticky=E+W)        
+    fun_frame_Button_spider = Button(fun_frame_Labelframe,text="开始爬取数据",command=MyThread_spider,pady=10)
+    fun_frame_Button_spider.grid(row=2,column=0,sticky=E+W)     
+    fun_frame_Button_spider.bind("<Button-3>",tip6)   
     # fun_frame_Button_clean = Button(fun_frame_Labelframe,text="初步数据整理",command=clean).grid(row=3,column=0,sticky=E+W)
-    fun_frame_Button_clean_deep = Button(fun_frame_Labelframe,text="深度数据整理",command=clean_deep).grid(row=4,column=0,sticky=E+W)
-    fun_frame_Button_pdf_download = Button(fun_frame_Labelframe,text="pdf下载和整理",command=MyThread_pdf,pady=10).grid(row=5,column=0,sticky=E+W)
-    fun_frame_Button_png2excel = Button(fun_frame_Labelframe,text="插入图片到excel",command=png2excel,pady=10).grid(row=6,column=0,sticky=E+W)
+    fun_frame_Button_clean_deep = Button(fun_frame_Labelframe,text="深度数据整理",command=clean_deep)
+    fun_frame_Button_clean_deep.grid(row=4,column=0,sticky=E+W)
+    fun_frame_Button_clean_deep.bind("<Button-3>",tip7)
+    fun_frame_Button_pdf_download = Button(fun_frame_Labelframe,text="pdf下载和整理",command=MyThread_pdf,pady=10)
+    fun_frame_Button_pdf_download.grid(row=5,column=0,sticky=E+W)
+    fun_frame_Button_pdf_download.bind("<Button-3>",tip8)
+    fun_frame_Button_png2excel = Button(fun_frame_Labelframe,text="插入图片到excel",command=png2excel,pady=10)
+    fun_frame_Button_png2excel.grid(row=6,column=0,sticky=E+W)
+    fun_frame_Button_png2excel.bind("<Button-3>",tip9)
     pil_image = Image.new('RGB', (500, 500), (255,255,255))
     tk_image = ImageTk.PhotoImage(pil_image)
-
-    fun_frame_Button_vip = Button(fun_frame_Labelframe,text="一键爬取清洗下载保存导出",command=vip,pady=15).grid(row=7,column=0,columnspan=2,sticky=E+W)
+    fun_frame_Button_vip = Button(fun_frame_Labelframe,text="一键爬取清洗下载保存导出",command=vip,pady=15)
+    fun_frame_Button_vip.grid(row=7,column=0,columnspan=2,sticky=E+W)
+    fun_frame_Button_vip.bind("<Button-3>",tip10)
+    fun_frame_Button_tip = Button(fun_frame_Labelframe,text="查看使用手册",command=open_tip).grid(row=8,column=0,columnspan=2,sticky=E+W)
     fun_frame_Labelframe.grid()
 
     # 爬取数据之后
@@ -1250,9 +1345,11 @@ if __name__ == "__main__":
                 showinfo("[ tip ] check = True")
                 show_df_all()
 
-    label_img = Label(png_frame,image=tk_image)
-    label_img.pack(expand=True,anchor="center",fill="both")
+    png_frame_Labelframe = LabelFrame(png_frame,text="图片展示区",padx=10,pady=10)
 
+    label_img = Label(png_frame_Labelframe,image=tk_image)
+    label_img.pack(expand=True,anchor="center",fill="both")
+    png_frame_Labelframe.pack()
 
     key_frame.place(x=0,y=0)
     sea_frame.place(x=425,y=0)
